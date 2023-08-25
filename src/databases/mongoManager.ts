@@ -2,6 +2,8 @@ import { log } from "console";
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
+const logger = require('../logger');
+
 const uri = "mongodb+srv://mongo:mooquackwoof@atlascluster.ofzo7oi.mongodb.net/?retryWrites=true&w=majority";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -35,25 +37,80 @@ export const setupMongo = async () => {
 }
 
 
-export const insertSimilarity = async (data:Array<any>) => {
-    
+export const insertSimilarity = async (data: Array<any>) => {
+
     await client.connect();
     const myDB = client.db("mps");
     const myColl = myDB.collection("similarity1");
     try {
-       const insertManyresult = await myColl.insertMany(data);
-    //    let ids = insertManyresult.insertedIds;
-       console.log(`${insertManyresult.insertedCount} documents were inserted.`);
-    //    for (let id of Object.values(ids)) {
-    //       console.log(`Inserted a document with id ${id}`);
-    //    }
-    } catch(e) {
-       console.log(`A MongoBulkWriteException occurred, but there are successfully processed documents.`);
-       console.log(e);    
-       // @ts-ignore   
-       console.log(`Number of documents inserted: ${e.result.result.nInserted}`);
+        const insertManyresult = await myColl.insertMany(data);
+        console.log(`${insertManyresult.insertedCount} documents were inserted.`);
+    } catch (e) {
+        console.log(`A MongoBulkWriteException occurred, but there are successfully processed documents.`);
+        console.log(e);
+        // @ts-ignore   
+        console.log(`Number of documents inserted: ${e.result.result.nInserted}`);
     }
 
-    
+
+}
+
+export const getDivisionNames = async () => {
+
+    logger.debug('Getting DIVISION Names from mongo...');
+
+    await client.connect();
+    const myDB = client.db("mps");
+    const myColl = myDB.collection("divisionNames");
+    let allDivision = [];
+    try {
+        allDivision = await myColl.find({}).toArray();
+
+    } catch (e) {
+        console.log(`A MongoBulkWriteException occurred, but there are successfully processed documents.`);
+        console.log(e);
+    }
+
+    return allDivision;
+}
+
+export const getMpNames = async () => {
+
+    logger.debug('Getting MP Names from mongo...');
+
+    await client.connect();
+    const myDB = client.db("mps");
+    const myColl = myDB.collection("mpNames");
+    // @ts-ignore   
+    let allMps = [];
+    try {
+        allMps = await myColl.find({}).toArray();        
+    } catch (e) {
+        console.log(`A MongoBulkWriteException occurred, but there are successfully processed documents.`);
+        console.log(e);
+    }
+
+    // @ts-ignore   
+    return allMps;
+}
+
+export const mostSimilarVotingRecord = async (name: string) => {
+
+    logger.debug('Getting mostSimilarVotingRecord from mongo...');
+
+    await client.connect();
+    const myDB = client.db("mps");
+    const myColl = myDB.collection("similarity1");
+    // @ts-ignore   
+    let mostSimilarVoting = [];
+    try {
+        mostSimilarVoting = await myColl.find({ name }).toArray();        
+    } catch (e) {
+        console.log(`A MongoBulkWriteException occurred, but there are successfully processed documents.`);
+        console.log(e);
+    }
+
+    // @ts-ignore   
+    return mostSimilarVoting;
 }
 

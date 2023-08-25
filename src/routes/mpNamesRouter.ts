@@ -1,7 +1,8 @@
 import { log } from 'console';
 import express, { Request, Response } from 'express';
 import { appStatus } from '../models/appStatus'
-import { getMpNames } from "../databases/neoManager"
+// import { getMpNames } from "../databases/neoManager"
+import { getMpNames } from "../databases/mongoManager"
 
 const mpNamesRouter = express.Router();
 
@@ -11,16 +12,15 @@ mpNamesRouter.get('/', async (req: Request, res: Response) => {
 
   const mps = await getMpNames();
 
-  // @ts-ignore
+  //@ts-ignore
   const formattedResult = []
-  
+
   // @ts-ignore
-  mps.records.forEach(i => {    
-    formattedResult.push({ type: 'mp', id: i._fields[1].low, name: i._fields[0]});
+  mps.forEach(i => {
+    formattedResult.push({ type: 'mp', id: i.id, name: i.nameDisplayAs });
   });
 
-  // const mps = { hello: true }
-    // @ts-ignore
+  // @ts-ignore
   res.json(formattedResult);
 });
 
