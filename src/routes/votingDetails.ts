@@ -24,9 +24,9 @@ votingDetails.get('/', async (req: Request, res: Response) => {
     const enrichedAye = aye.map(i => { return { 'memberVotedAye': true, ...i}});
     result.push(...enrichedAye);
   } else if (type === 'votedNo') {
-    
+
     // @ts-ignore   
-    const no = await getVotesFromIds(mp.votedAye);
+    const no = await getVotesFromIds(mp.votedNo);
     // @ts-ignore  
     const enrichedNo = no.map(i => { return { 'memberVotedAye': false, ...i}});
     result.push(...enrichedNo);
@@ -39,7 +39,7 @@ votingDetails.get('/', async (req: Request, res: Response) => {
     result.push(...enrichedAye);
 
     // @ts-ignore   
-    const no = await getVotesFromIds(mp.votedAye);
+    const no = await getVotesFromIds(mp.votedNo);
     // @ts-ignore  
     const enrichedNo = no.map(i => { return { 'memberVotedAye': false, ...i}});
     result.push(...enrichedNo);
