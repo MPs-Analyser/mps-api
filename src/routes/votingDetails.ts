@@ -1,21 +1,48 @@
 import { log } from 'console';
 import express, { Request, Response } from 'express';
-import { votedNo, votedAye, voted } from "../databases/neoManager";
+// import { votedNo, votedAye, voted } from "../databases/neoManager";
+import { getMp, getVotesFromIds } from "../databases/mongoManager";
 
 const votingDetails = express.Router();
 
 votingDetails.get('/', async (req: Request, res: Response) => {
 
-  const name: any = req?.query?.name;
+  const id: any = Number(req?.query?.id);
   const type = req?.query?.type;
 
-  let result: any;
-  if (type === 'votedAye') {
-    result = await votedAye(name);
+  console.log('get voting details for ', id, type);
+  
+  const mp = await getMp(id, { votedAye: 1, votedNo: 1 });
+  
+  // @ts-ignore   
+  let result = [];
+    
+  if (type === 'votedAye') {     
+    // @ts-ignore   
+    const aye = await getVotesFromIds(mp.votedAye);
+    // @ts-ignore  
+    const enrichedAye = aye.map(i => { return { 'memberVotedAye': true, ...i}});
+    result.push(...enrichedAye);
   } else if (type === 'votedNo') {
-    result = await votedNo(name);
+    
+    // @ts-ignore   
+    const no = await getVotesFromIds(mp.votedAye);
+    // @ts-ignore  
+    const enrichedNo = no.map(i => { return { 'memberVotedAye': false, ...i}});
+    result.push(...enrichedNo);
   } else {
-    result = await voted(name);
+    
+    // @ts-ignore   
+    const aye = await getVotesFromIds(mp.votedAye);
+    // @ts-ignore  
+    const enrichedAye = aye.map(i => { return { 'memberVotedAye': true, ...i}});
+    result.push(...enrichedAye);
+
+    // @ts-ignore   
+    const no = await getVotesFromIds(mp.votedAye);
+    // @ts-ignore  
+    const enrichedNo = no.map(i => { return { 'memberVotedAye': false, ...i}});
+    result.push(...enrichedNo);
   }
 
   res.json(result);
