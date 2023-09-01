@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "build": "npx tsc",
-    "start": "npx tsc && node dist/index.js | pino-pretty",
+    "build": "npx tsc -p .",
+    "start": "npx tsc -p . && node dist/index.js | pino-pretty",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\""
+    "dev": "concurrently \"npx tsc -p . --watch\" \"nodemon -q dist/index.js\""
   },
   "keywords": [],
   "author": "",
