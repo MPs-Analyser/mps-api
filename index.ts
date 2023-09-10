@@ -12,6 +12,7 @@ import mostSimilarVotingRecordNeoRouter from './src/routes/mostSimilarVotingReco
 import votingDetails from './src/routes/votingDetails';
 import mpDetailsRouter from './src/routes/mpDetailsRouter';
 import votingSummaryRouter from './src/routes/votingSummaryRouter';
+import votingSummaryNeoRouter from './src/routes/votingSummaryNeoRouter';
 
 dotenv.config()
 
@@ -29,6 +30,7 @@ app.use("/votingSimilarityNeo", mostSimilarVotingRecordNeoRouter);
 app.use("/mpDetails", mpDetailsRouter);  
 app.use("/votingDetails", votingDetails);  
 app.use("/votingSummary", votingSummaryRouter);  
+app.use("/votingSummaryNeo", votingSummaryNeoRouter);  
 
 app.listen(port, () => {  
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
