@@ -157,15 +157,27 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
 
     logger.debug('finding mostSimilarVotingRecord...');
 
+    
+
     //find mps with most similar voting records
-    const cypher = `CALL gds.nodeSimilarity.stream('g1', {
-        relationshipWeightProperty: 'votedAyeNumeric'
-    })
-    YIELD node1, node2, similarity 
-    WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity 
-    WHERE mp1.nameDisplayAs = "${nameDisplayAs}" OR node2 = "${nameDisplayAs}"
-    RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, similarity
-    ORDER BY similarity DESCENDING, mp1, mp2`;
+    // const cypher = `CALL gds.nodeSimilarity.stream('g1', {
+    //     relationshipWeightProperty: 'votedAyeNumeric'
+    // })
+    // YIELD node1, node2, similarity 
+    // WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity 
+    // WHERE mp1.nameDisplayAs = "${nameDisplayAs}" OR node2 = "${nameDisplayAs}"
+    // RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, similarity
+    // ORDER BY similarity DESCENDING, mp1, mp2`;
+
+    const cypher = `MATCH(targetNode: Mp { nameDisplayAs: "${nameDisplayAs}" })
+    CALL gds.nodeSimilarity.stream('g1', {
+            relationshipWeightProperty: 'votedAyeNumeric'
+        })
+    YIELD node1, node2, similarity
+    WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity    
+    RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
+    ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
+    LIMIT 20`;
 
 
     CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
@@ -179,32 +191,6 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
     } finally {
         session.close();
     }
-
-}
-
-export const setupNeo = async () => {
-
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
-
-    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
-    const session = driver.session();
-
-    logger.debug(`NEO URL ${CONNECTION_STRING + process.env.NEO4J_USER + process.env.NEO4J_PASSWORD}`);
-
-    try {
-        let result;
-        result = await runCypher(`MATCH (n) DETACH DELETE n`, session);
-        result = await runCypher(`CREATE CONSTRAINT FOR (mp:Mp) REQUIRE mp.id IS UNIQUE`, session);
-        result = await runCypher(`CREATE CONSTRAINT FOR (mp:Mp) REQUIRE mp.id IS UNIQUE`, session);
-        result = await runCypher(`CREATE CONSTRAINT voted_for_unique ON (mp:Mp)-[:VOTED_FOR]->(division:Division) REQUIRE (mp.id <> division.id)`, session);
-    } catch (error) {
-        //contraint already exists so proceed
-    } finally {
-        session.close();
-    }
-
-    logger.debug('NEO setup complete');
 
 }
 
