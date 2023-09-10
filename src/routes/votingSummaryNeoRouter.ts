@@ -12,10 +12,6 @@ votingSummaryNeoRouter.get('/', async (req: Request, res: Response) => {
   const votedAyeResponse = await votedAyeCount(name);
   const votedNoResponse = await votedNoCount(name);
 
-  console.log('totalVotes ', totalVotesResponse.records[0]._fields[0].low);
-  console.log('votedAye ', votedAyeResponse);
-  console.log('votedNo ', votedNoResponse);
-
   const votingSummary = {
     total: totalVotesResponse.records[0]._fields[0].low,
     votedAye: votedAyeResponse.records[0]._fields[0].low,

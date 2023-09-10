@@ -102,26 +102,9 @@ export const votedNoCount = async (nameDisplayAs: string) => {
     }
 }
 
-export const voted = async (nameDisplayAs: string) => {
+export const voted = async (id: number) => {
 
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}") RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
-
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
-    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
-    const session = driver.session();
-
-    try {
-        const result = await runCypher(cypher, session);
-        return result;
-    } finally {
-        session.close();
-    }
-}
-
-export const votedAye = async (nameDisplayAs: string) => {
-
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id}) RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
 
     CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -136,9 +119,26 @@ export const votedAye = async (nameDisplayAs: string) => {
     }
 }
 
-export const votedNo = async (nameDisplayAs: string) => {
+export const votedAye = async (id: number) => {
 
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND NOT r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
+
+    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+}
+
+export const votedNo = async (id: number) => {
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND NOT r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
