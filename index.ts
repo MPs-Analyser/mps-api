@@ -19,6 +19,8 @@ import mpDetailsRouter from './src/routes/mpDetailsRouter';
 import votingSummaryRouter from './src/routes/votingSummaryRouter';
 import votingSummaryNeoRouter from './src/routes/votingSummaryNeoRouter';
 
+const logger = require('./src/logger');
+
 dotenv.config()
 
 const app: Express = express();
@@ -43,5 +45,5 @@ app.use("/votingSummary", votingSummaryRouter);
 app.use("/votingSummaryNeo", votingSummaryNeoRouter);  
 
 app.listen(port, () => {  
-  console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
+  logger.info(`Server is running at http://localhost:${port}`);  
 });
