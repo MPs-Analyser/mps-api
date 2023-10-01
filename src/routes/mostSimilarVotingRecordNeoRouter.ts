@@ -35,7 +35,7 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
       // @ts-ignore
     result.records.forEach(i => {  
       formattedResult.push(
-        { name: i._fields[1], score: i._fields[2]}
+        { name: i._fields[1], party: i._fields[2], score: i._fields[3]}
       )
     })
   }
