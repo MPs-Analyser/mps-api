@@ -5,7 +5,7 @@ import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
 
 const logger = require('../logger');
-
+//hello
 let CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
 // let CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
 let driver: any;
