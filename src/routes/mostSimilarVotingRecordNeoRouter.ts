@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { mostSimilarVotingRecord, mostSimilarVotingRecordPartyExcludes, mostSimilarVotingRecordPartyIncludes } from "../databases/neoManager";
+import { log } from 'console';
 
 const mostSimilarVotingRecordRouter = express.Router();
 
@@ -27,9 +28,20 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     // @ts-ignore
     result = await mostSimilarVotingRecord(name);    
   }
-
+  
   // @ts-ignore
-  res.json(result.records);
+  const formattedResult = []
+  if (result && result.records && Array.isArray(result.records)) {
+      // @ts-ignore
+    result.records.forEach(i => {  
+      formattedResult.push(
+        { name: i._fields[1], score: i._fields[2]}
+      )
+    })
+  }
+  
+  // @ts-ignore
+  res.json(formattedResult);
 });
 
 export default mostSimilarVotingRecordRouter;
