@@ -8,13 +8,13 @@ votingSummaryNeoRouter.get('/', async (req: Request, res: Response) => {
 
   logger.info("Getting voting summary from NEO")
 
-  const name: any = req?.query?.name;
+  const id: any = req?.query?.id;
 
-  logger.info("Using MP name of " + name)
+  logger.info("Using MP name of " + id)
 
-  const totalVotesResponse: any = await totalVotes(name);
-  const votedAyeResponse = await votedAyeCount(name);
-  const votedNoResponse = await votedNoCount(name);
+  const totalVotesResponse: any = await totalVotes(id);
+  const votedAyeResponse = await votedAyeCount(id);
+  const votedNoResponse = await votedNoCount(id);
 
   const votingSummary = {
     total: totalVotesResponse.records[0]._fields[0].low,

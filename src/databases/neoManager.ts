@@ -54,8 +54,8 @@ export const getDivisionNames = async () => {
     }
 }
 
-export const totalVotes = async (nameDisplayAs: string) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}") RETURN COUNT(d)`;
+export const totalVotes = async (id: number) => {
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id}) RETURN COUNT(d)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -70,8 +70,8 @@ export const totalVotes = async (nameDisplayAs: string) => {
     }
 }
 
-export const votedAyeCount = async (nameDisplayAs: string) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND r.votedAye) RETURN COUNT(*)`;
+export const votedAyeCount = async (id: number) => {
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND r.votedAye) RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -86,8 +86,8 @@ export const votedAyeCount = async (nameDisplayAs: string) => {
     }
 }
 
-export const votedNoCount = async (nameDisplayAs: string) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND NOT r.votedAye) RETURN COUNT(*)`;
+export const votedNoCount = async (id: number) => {
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND NOT r.votedAye) RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
