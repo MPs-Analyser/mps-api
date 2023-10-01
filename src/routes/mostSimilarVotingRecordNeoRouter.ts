@@ -26,26 +26,46 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     result = await mostSimilarVotingRecordPartyExcludes(name, partyExcludes);
   } else {
     // @ts-ignore
-    result = await mostSimilarVotingRecord(name);    
+    result = await mostSimilarVotingRecord(name);
   }
-  
+
   // @ts-ignore
   const formattedResult = []
   if (result && result.records && Array.isArray(result.records)) {
-      // @ts-ignore
-    result.records.forEach(i => { 
-      console.log(i._fields);
 
-      //the query retuns 2 rows for each result so skip every other row for now
-      if (i._fields[0] === name) {
-        formattedResult.push(
-          { name: i._fields[1], party: i._fields[2], score: i._fields[i._fields.length-1]}
-        )
-      }
-    
-    })
+    if (partyIncludes || partyExcludes) {
+      // @ts-ignore
+      result.records.forEach(i => {
+        console.log(i._fields);
+
+        //the query retuns 2 rows for each result so skip every other row for now
+        if (i._fields[0] === name) {
+          formattedResult.push(
+            { name: i._fields[2], party: i._fields[3], score: i._fields[i._fields.length - 1] }
+          )
+        }
+
+      })
+
+    } else {
+      // @ts-ignore
+      result.records.forEach(i => {
+        console.log(i._fields);
+
+
+        //the query retuns 2 rows for each result so skip every other row for now
+        if (i._fields[0] === name) {
+          formattedResult.push(
+            { name: i._fields[1], party: i._fields[2], score: i._fields[i._fields.length - 1] }
+          )
+        }
+
+      })
+    }
+
+
   }
-  
+
   // @ts-ignore
   res.json(formattedResult);
 });
