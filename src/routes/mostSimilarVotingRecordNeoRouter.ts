@@ -35,9 +35,7 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
 
     if (partyIncludes || partyExcludes) {
       // @ts-ignore
-      result.records.forEach(i => {
-        console.log(i._fields);
-
+      result.records.forEach(i => {        
         //the query retuns 2 rows for each result so skip every other row for now
         if (i._fields[0] === name) {
           formattedResult.push(
@@ -49,10 +47,7 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
 
     } else {
       // @ts-ignore
-      result.records.forEach(i => {
-        console.log(i._fields);
-
-
+      result.records.forEach(i => {      
         //the query retuns 2 rows for each result so skip every other row for now
         if (i._fields[0] === name) {
           formattedResult.push(
@@ -62,10 +57,11 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
 
       })
     }
-
-
   }
-
+  
+// @ts-ignore
+ console.log("formatted results ", formattedResult);
+ 
   // @ts-ignore
   res.json(formattedResult);
 });

@@ -25,7 +25,7 @@ WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package*.json ./
-# COPY .env.PROD ./.env
+COPY .env ./.env
 
 RUN npm ci --production
 
