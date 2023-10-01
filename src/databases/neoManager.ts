@@ -6,7 +6,7 @@ import neo4j from "neo4j-driver";
 
 const logger = require('../logger');
 //hello
-let CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+let CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 // let CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
 let driver: any;
 
@@ -24,7 +24,7 @@ export const getMpNames = async () => {
 
     logger.debug('Getting MP Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -41,7 +41,7 @@ export const getDivisionNames = async () => {
 
     logger.debug('Getting DIVISION Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -57,7 +57,7 @@ export const getDivisionNames = async () => {
 export const totalVotes = async (nameDisplayAs: string) => {
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}") RETURN COUNT(d)`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -73,7 +73,7 @@ export const totalVotes = async (nameDisplayAs: string) => {
 export const votedAyeCount = async (nameDisplayAs: string) => {
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND r.votedAye) RETURN COUNT(*)`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -89,7 +89,7 @@ export const votedAyeCount = async (nameDisplayAs: string) => {
 export const votedNoCount = async (nameDisplayAs: string) => {
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.nameDisplayAs = "${nameDisplayAs}" AND NOT r.votedAye) RETURN COUNT(*)`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -106,7 +106,7 @@ export const voted = async (id: number) => {
 
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id}) RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -123,7 +123,7 @@ export const votedAye = async (id: number) => {
 
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -140,7 +140,7 @@ export const votedNo = async (id: number) => {
 
     const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND NOT r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -166,7 +166,7 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT 20`;
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -195,7 +195,7 @@ export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT 20`
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -223,7 +223,7 @@ export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT 20`
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
@@ -240,7 +240,7 @@ export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string
 
 export const setupDataScience = async () => {
 
-    CONNECTION_STRING = `bolt://${process.env.DOCKER_HOST}:7687`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
 
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
