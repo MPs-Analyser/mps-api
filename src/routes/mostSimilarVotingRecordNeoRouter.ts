@@ -33,9 +33,11 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   const formattedResult = []
   if (result && result.records && Array.isArray(result.records)) {
       // @ts-ignore
-    result.records.forEach(i => {  
+    result.records.forEach(i => { 
+      console.log(i._fields);
+       
       formattedResult.push(
-        { name: i._fields[0], party: i._fields[1], score: i._fields[4]}
+        { name: i._fields[0], party: i._fields[1], score: i._fields[i._fields.length-1]}
       )
     })
   }
