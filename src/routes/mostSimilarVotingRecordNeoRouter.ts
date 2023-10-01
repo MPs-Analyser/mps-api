@@ -34,8 +34,6 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   if (result && result.records && Array.isArray(result.records)) {
       // @ts-ignore
     result.records.forEach(i => {  
-      console.log(i);
-      
       formattedResult.push(
         { name: i._fields[0], party: i._fields[1], score: i._fields[4]}
       )
