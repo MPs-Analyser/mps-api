@@ -58,9 +58,6 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
       })
     }
   }
-  
-// @ts-ignore
- console.log("formatted results ", formattedResult);
  
   // @ts-ignore
   res.json(formattedResult);

@@ -5,13 +5,11 @@ const logger = require('../logger');
 const votingSummaryNeoRouter = express.Router();
 
 votingSummaryNeoRouter.get('/', async (req: Request, res: Response) => {
-
-  logger.info("Getting voting summary from NEO")
-
+  
   const id: any = req?.query?.id;
 
-  logger.info("Using MP name of " + id)
-
+  logger.info("Getting voting summary from NEO for MP with id " + id);
+  
   const totalVotesResponse: any = await totalVotes(id);
   const votedAyeResponse = await votedAyeCount(id);
   const votedNoResponse = await votedNoCount(id);
