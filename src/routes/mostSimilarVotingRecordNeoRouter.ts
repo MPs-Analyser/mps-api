@@ -35,10 +35,14 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
       // @ts-ignore
     result.records.forEach(i => { 
       console.log(i._fields);
-       
-      formattedResult.push(
-        { name: i._fields[0], party: i._fields[1], score: i._fields[i._fields.length-1]}
-      )
+
+      //the query retuns 2 rows for each result so skip every other row for now
+      if (i._fields[0] === name) {
+        formattedResult.push(
+          { name: i._fields[1], party: i._fields[2], score: i._fields[i._fields.length-1]}
+        )
+      }
+    
     })
   }
   

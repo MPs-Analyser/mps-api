@@ -164,7 +164,7 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
     WHERE (mp1.nameDisplayAs = "${nameDisplayAs}" OR mp2.nameDisplayAs = "${nameDisplayAs}")    
     RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 20`;
+    LIMIT 40`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -193,7 +193,7 @@ export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName = "${partyName}") )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 20`
+    LIMIT 40`
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -221,7 +221,7 @@ export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName <> "${partyName}" ) )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 20`
+    LIMIT 40`
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
