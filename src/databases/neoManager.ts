@@ -153,18 +153,18 @@ export const votedNo = async (id: number) => {
     }
 }
 
-export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
+export const mostSimilarVotingRecord = async (nameDisplayAs: string, limit: number = 40) => {
     
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 100
+        topK: 500
     })
     YIELD node1, node2, similarity
     WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity    
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}" OR mp2.nameDisplayAs = "${nameDisplayAs}")    
+    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")    
     RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 40`;
+    LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -180,20 +180,20 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string) => {
 
 }
 
-export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string, partyName: string) => {
+export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string, partyName: string, limit: number = 40) => {
 
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 100
+        topK: 500
     })
     YIELD node1, node2, similarity
     WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity  
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}" OR mp2.nameDisplayAs = "${nameDisplayAs}")
+    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")
     AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName = "${partyName}")  
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName = "${partyName}") )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 40`
+    LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -208,20 +208,20 @@ export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string
     }
 }
 
-export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string, partyName: string) => {
+export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string, partyName: string, limit: number = 40) => {
     
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 100
+        topK: 500
     })
     YIELD node1, node2, similarity
     WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity  
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}" OR mp2.nameDisplayAs = "${nameDisplayAs}")
+    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")
     AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName <> "${partyName}" )  
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName <> "${partyName}" ) )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
     ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT 40`
+    LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -234,9 +234,7 @@ export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string
     } finally {
         session.close();
     }
-
 }
-
 
 export const setupDataScience = async () => {
 

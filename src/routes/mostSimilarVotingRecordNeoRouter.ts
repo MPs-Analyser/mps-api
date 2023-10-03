@@ -9,6 +9,9 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   console.log('Checking node similariy ', req.query);
 
   // @ts-ignore
+  const limit: string = req?.query?.limit;
+
+  // @ts-ignore
   const name: string = req?.query?.name;
 
   // @ts-ignore
@@ -20,13 +23,13 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   let result;
   if (partyIncludes) {
     // @ts-ignore
-    result = await mostSimilarVotingRecordPartyIncludes(name, partyIncludes);
+    result = await mostSimilarVotingRecordPartyIncludes(name, partyIncludes, limit);
   } else if (partyExcludes) {
     // @ts-ignore
-    result = await mostSimilarVotingRecordPartyExcludes(name, partyExcludes);
+    result = await mostSimilarVotingRecordPartyExcludes(name, partyExcludes, limit);
   } else {
     // @ts-ignore
-    result = await mostSimilarVotingRecord(name);
+    result = await mostSimilarVotingRecord(name, limit);
   }
 
   // @ts-ignore
