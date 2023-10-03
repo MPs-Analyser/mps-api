@@ -42,30 +42,19 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     if (partyIncludes || partyExcludes) {
       // @ts-ignore
       result.records.forEach(i => {
-        //the query retuns 2 rows for each result so skip every other row for now
-        if (i._fields[0] === name) {
-          // @ts-ignore          
-          formattedResult.push(
-            { name: i._fields[2], party: i._fields[3], score: i._fields[i._fields.length - 1] }
-          )
-        } else {
-          formattedResult.push(
-            { name: i._fields[0], party: i._fields[1], score: i._fields[i._fields.length - 1] }
-          )
-        }
-
+        // @ts-ignore          
+        formattedResult.push(
+          { name: i._fields[2], party: i._fields[3], score: i._fields[i._fields.length - 1] }
+        )
       })
 
     } else {
       // @ts-ignore
       result.records.forEach(i => {
-        //the query retuns 2 rows for each result so skip every other row for now
-        if (i._fields[0] === name) {
-          formattedResult.push(
-            { name: i._fields[1], party: i._fields[2], score: i._fields[i._fields.length - 1] }
-          )
-        }
-
+        //the query retuns 2 rows for each result so skip every other row for now        
+        formattedResult.push(
+          { name: i._fields[1], party: i._fields[2], score: i._fields[i._fields.length - 1] }
+        )
       })
     }
   }
