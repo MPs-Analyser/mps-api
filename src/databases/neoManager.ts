@@ -153,7 +153,7 @@ export const votedNo = async (id: number) => {
     }
 }
 
-export const mostSimilarVotingRecord = async (nameDisplayAs: string, limit: number = 40) => {
+export const votingSimilarity = async (nameDisplayAs: string, limit: number = 40, orderBy: string = "DESCENDING") => {
     
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
@@ -163,7 +163,7 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string, limit: numb
     WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity    
     WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")    
     RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
+    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -180,7 +180,7 @@ export const mostSimilarVotingRecord = async (nameDisplayAs: string, limit: numb
 
 }
 
-export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string, partyName: string, limit: number = 40) => {
+export const votingSimilarityPartyIncludes = async (nameDisplayAs: string, partyName: string, limit: number = 40, orderBy: string = "DESCENDING") => {
 
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
@@ -192,7 +192,7 @@ export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string
     AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName = "${partyName}")  
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName = "${partyName}") )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
+    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -208,7 +208,7 @@ export const mostSimilarVotingRecordPartyIncludes = async (nameDisplayAs: string
     }
 }
 
-export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string, partyName: string, limit: number = 40) => {
+export const VotingSimilarityPartyExcludes = async (nameDisplayAs: string, partyName: string, limit: number = 40, orderBy: string = "DESCENDING") => {
     
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
@@ -220,7 +220,7 @@ export const mostSimilarVotingRecordPartyExcludes = async (nameDisplayAs: string
     AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName <> "${partyName}" )  
     OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName <> "${partyName}" ) )
     RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity DESCENDING, mp1.nameDisplayAs, mp2.nameDisplayAs
+    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
     LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;

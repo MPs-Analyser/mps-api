@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { mostSimilarVotingRecord, mostSimilarVotingRecordPartyExcludes, mostSimilarVotingRecordPartyIncludes } from "../databases/neoManager";
+import { votingSimilarity, VotingSimilarityPartyExcludes, votingSimilarityPartyIncludes } from "../databases/neoManager";
 import { log } from 'console';
 
 const mostSimilarVotingRecordRouter = express.Router();
@@ -10,6 +10,9 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
 
   // @ts-ignore
   const limit: string = req?.query?.limit;
+
+  // @ts-ignore
+  const orderby: string = req?.query?.orderby;
 
   // @ts-ignore
   const name: string = req?.query?.name;
@@ -23,13 +26,13 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   let result;
   if (partyIncludes) {
     // @ts-ignore
-    result = await mostSimilarVotingRecordPartyIncludes(name, partyIncludes, limit);
+    result = await votingSimilarityPartyIncludes(name, partyIncludes, limit, orderby);
   } else if (partyExcludes) {
     // @ts-ignore
-    result = await mostSimilarVotingRecordPartyExcludes(name, partyExcludes, limit);
+    result = await VotingSimilarityPartyExcludes(name, partyExcludes, limit, orderby);
   } else {
     // @ts-ignore
-    result = await mostSimilarVotingRecord(name, limit);
+    result = await votingSimilarity(name, limit, orderby);
   }
 
   // @ts-ignore
