@@ -19,7 +19,12 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const partyExcludes = req?.query?.partyExcludes;
 
-  let partyToQuery = partyIncludes || partyExcludes;
+  let partyToQuery = partyIncludes || partyExcludes;  
+  
+  if (partyToQuery === 'any') {
+    partyToQuery = undefined;
+  }
+
   let partyOperator = "=";
   if (partyExcludes) {
     partyOperator = "<>"
