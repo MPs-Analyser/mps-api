@@ -16,6 +16,9 @@ import votingDetailsNeoRouter from './src/routes/votingDetailsNeoRouter';
 
 import mpDetailsRouter from './src/routes/mpDetailsRouter';
 
+import mpVotesRouter from './src/routes/mpVotesRouter';
+import divisionVotesRouter from './src/routes/divisionVotesRouter';
+
 import votingSummaryRouter from './src/routes/votingSummaryRouter';
 import votingSummaryNeoRouter from './src/routes/votingSummaryNeoRouter';
 
@@ -43,6 +46,11 @@ app.use("/votingDetailsNeo", votingDetailsNeoRouter);
 
 app.use("/votingSummary", votingSummaryRouter);  
 app.use("/votingSummaryNeo", votingSummaryNeoRouter);  
+
+app.use("/insights/mpvotes", mpVotesRouter);  
+app.use("/insights/divisionvotes", divisionVotesRouter);  
+
+mpVotesRouter
 
 app.listen(port, () => {  
   logger.info(`Server is running at http://localhost:${port}`);  
