@@ -21,7 +21,8 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
 
   let partyToQuery = partyIncludes || partyExcludes;  
   
-  if (partyToQuery === 'any') {
+  // @ts-ignore
+  if (partyToQuery.toLowerCase() === 'any') {
     partyToQuery = undefined;
   }
 
