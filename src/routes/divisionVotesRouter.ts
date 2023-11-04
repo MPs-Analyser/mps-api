@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { mostOrLeastVotedDivision } from "../databases/neoManager";
 
- 
+
 
 const divisionVotesRouter = express.Router();
 
@@ -19,10 +19,13 @@ divisionVotesRouter.get('/', async (req: Request, res: Response) => {
   const ayeOrNo = req?.query?.ayeorno;
 
   // @ts-ignore
-  const result = await mostOrLeastVotedDivision(ayeOrNo, limit, orderby);
+  const voteCategory = req?.query?.voteCategory;
 
-  console.log("reuslt ", result );
-  
+  // @ts-ignore
+  const result = await mostOrLeastVotedDivision(ayeOrNo, voteCategory, limit, orderby);
+
+  console.log("reuslt ", result);
+
   if (result && result.records) {
     // @ts-ignore
     res.json(result.records);

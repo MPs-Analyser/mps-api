@@ -291,24 +291,45 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, limit: number = 40, orderBy: string = "DESCENDING") => {
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING") => {
     
     let cypher;
 
     if (ayeOrNo) {
-        let ayeOrNoBool = ayeOrNo === "aye" ? true : false;        
-        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
-        WHERE r.votedAye = ${ayeOrNoBool}
-        WITH d, COUNT(*) AS edgeCount
-        ORDER BY edgeCount ${orderBy}
-        RETURN d.Title, edgeCount 
-        LIMIT ${limit}`;
+
+        let ayeOrNoBool = ayeOrNo === "aye" ? true : false;    
+
+        if (voteCategory) {
+            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
+            WHERE r.votedAye = ${ayeOrNoBool}
+            AND d.Category = "${voteCategory}"
+            WITH d, COUNT(*) AS edgeCount
+            ORDER BY edgeCount ${orderBy}
+            RETURN d.Title, edgeCount 
+            LIMIT ${limit}`;
+        } else {
+            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
+            WHERE r.votedAye = ${ayeOrNoBool}
+            WITH d, COUNT(*) AS edgeCount
+            ORDER BY edgeCount ${orderBy}
+            RETURN d.Title, edgeCount 
+            LIMIT ${limit}`;
+        }        
     } else {
-        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
-        WITH d, COUNT(*) AS edgeCount
-        ORDER BY edgeCount ${orderBy}
-        RETURN d.Title, edgeCount 
-        LIMIT ${limit}`;
+        if (voteCategory) {            
+            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
+            WHERE d.Category = "${voteCategory}"
+            WITH d, COUNT(*) AS edgeCount
+            ORDER BY edgeCount ${orderBy}
+            RETURN d.Title, edgeCount 
+            LIMIT ${limit}`;
+        } else {
+            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
+            WITH d, COUNT(*) AS edgeCount
+            ORDER BY edgeCount ${orderBy}
+            RETURN d.Title, edgeCount 
+            LIMIT ${limit}`;            
+        }
     }
     
 
