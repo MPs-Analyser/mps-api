@@ -246,7 +246,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
         if (voteCategory) {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)
             WHERE mp.partyName ${partyOperator} "${partyName}"
-            AND d.category = ${voteCategory}
+            AND d.category = "${voteCategory}"
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
@@ -262,7 +262,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     } else {
         if (voteCategory) {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
-            WHERE d.category = ${voteCategory}
+            WHERE d.category = "${voteCategory}"
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
