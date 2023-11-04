@@ -36,9 +36,7 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
 
   // @ts-ignore
   const result = await mostOrLeastVotingMps(partyToQuery, voteCategory, partyOperator, limit, orderby);
-
-  console.log("reuslt ", result );
-  
+    
   if (result && result.records) {
     // @ts-ignore
     res.json(result.records);
