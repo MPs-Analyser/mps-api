@@ -19,6 +19,9 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const partyExcludes = req?.query?.partyExcludes;
 
+  // @ts-ignore
+  const voteCategory = req?.query?.voteCategory;
+
   let partyToQuery = partyIncludes || partyExcludes;  
   
   // @ts-ignore
@@ -32,7 +35,7 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   }
 
   // @ts-ignore
-  const result = await mostOrLeastVotingMps(partyToQuery, partyOperator, limit, orderby);
+  const result = await mostOrLeastVotingMps(partyToQuery, voteCategory, partyOperator, limit, orderby);
 
   console.log("reuslt ", result );
   

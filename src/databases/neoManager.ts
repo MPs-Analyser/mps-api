@@ -237,23 +237,44 @@ export const VotingSimilarityPartyExcludes = async (nameDisplayAs: string, party
 }
 
 
-export const mostOrLeastVotingMps = async (partyName: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING") => {
+export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING") => {
     
     let cypher;
 
     if (partyName) {
-        cypher = `MATCH (mp:Mp)-[]-(d:Division)
-        WHERE mp.partyName ${partyOperator} "${partyName}"
-        WITH mp, COUNT(*) AS voteCount
-        ORDER BY voteCount ${orderBy}
-        RETURN mp.nameDisplayAs, mp.partyName, voteCount 
-        LIMIT ${limit}`;
+
+        if (voteCategory) {
+            cypher = `MATCH (mp:Mp)-[]-(d:Division)
+            WHERE mp.partyName ${partyOperator} "${partyName}"
+            AND d.category = ${voteCategory}
+            WITH mp, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            LIMIT ${limit}`;
+        } else {
+            cypher = `MATCH (mp:Mp)-[]-(d:Division)
+            WHERE mp.partyName ${partyOperator} "${partyName}"
+            WITH mp, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            LIMIT ${limit}`;
+        }        
     } else {
-        cypher = `MATCH (mp:Mp)-[]-(d:Division)        
-        WITH mp, COUNT(*) AS voteCount
-        ORDER BY voteCount ${orderBy}
-        RETURN mp.nameDisplayAs, mp.partyName, voteCount 
-        LIMIT ${limit}`;
+        if (voteCategory) {
+            cypher = `MATCH (mp:Mp)-[]-(d:Division)        
+            WHERE d.category = ${voteCategory}
+            WITH mp, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            LIMIT ${limit}`;
+        } else {
+            cypher = `MATCH (mp:Mp)-[]-(d:Division)        
+            WITH mp, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            LIMIT ${limit}`;
+        }
+        
     }
     
 
