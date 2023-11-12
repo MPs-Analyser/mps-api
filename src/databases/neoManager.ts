@@ -4,11 +4,31 @@ import { responseWrapper, responseValue, Mp } from '../models/mps';
 import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
 
+const EARLIEST_FROM_DATE = "2015-01-01";
+
 const logger = require('../logger');
 //hello
 let CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 // let CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
 let driver: any;
+
+const objectToStringWithoutQuotes = (obj: any) => {
+    let result = '{';
+
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            result += key + ':' + JSON.stringify(obj[key]) + ',';
+        }
+    }
+
+    // Remove the trailing comma if there are properties
+    if (result.length > 1) {
+        result = result.slice(0, -1);
+    }
+
+    result += '}';
+    return result;
+}
 
 const runCypher = async (cypher: string, session: any) => {
     logger.trace(cypher);
@@ -54,8 +74,30 @@ export const getDivisionNames = async () => {
     }
 }
 
-export const totalVotes = async (id: number) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id}) RETURN COUNT(d)`;
+/**
+ * 
+ * @param value expected format 2002-09-22
+ * @returns 
+ */
+const dateStringToNeo = (value: string) => {
+    return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
+}
+
+export const totalVotes = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+     WHERE (s.id = ${id}) 
+     AND d.Date > datetime(${fromDateValue}) 
+     AND d.Date < datetime(${toDateValue}) 
+     RETURN COUNT(d)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -70,8 +112,21 @@ export const totalVotes = async (id: number) => {
     }
 }
 
-export const votedAyeCount = async (id: number) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND r.votedAye) RETURN COUNT(*)`;
+export const votedAyeCount = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE (s.id = ${id} 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue}) 
+    AND r.votedAye) RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -86,8 +141,22 @@ export const votedAyeCount = async (id: number) => {
     }
 }
 
-export const votedNoCount = async (id: number) => {
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND NOT r.votedAye) RETURN COUNT(*)`;
+export const votedNoCount = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE (s.id = ${id} 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue}) 
+    AND NOT r.votedAye) 
+    RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -102,9 +171,21 @@ export const votedNoCount = async (id: number) => {
     }
 }
 
-export const voted = async (id: number) => {
+export const voted = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
 
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id}) RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE (s.id = ${id}) 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue}) 
+    RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -119,9 +200,21 @@ export const voted = async (id: number) => {
     }
 }
 
-export const votedAye = async (id: number) => {
+export const votedAye = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
 
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE (s.id = ${id} AND r.votedAye) 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue})     
+    RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -136,9 +229,21 @@ export const votedAye = async (id: number) => {
     }
 }
 
-export const votedNo = async (id: number) => {
+export const votedNo = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
 
-    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) WHERE (s.id = ${id} AND NOT r.votedAye) RETURN d.DivisionId, d.Title, d.Date`;
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE (s.id = ${id} AND NOT r.votedAye) 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue}) 
+    RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -154,7 +259,7 @@ export const votedNo = async (id: number) => {
 }
 
 export const votingSimilarity = async (nameDisplayAs: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-    
+
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
         topK: 500
@@ -209,7 +314,7 @@ export const votingSimilarityPartyIncludes = async (nameDisplayAs: string, party
 }
 
 export const VotingSimilarityPartyExcludes = async (nameDisplayAs: string, partyName: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-    
+
     const cypher = `CALL gds.nodeSimilarity.stream('g1', {
         relationshipWeightProperty: 'votedAyeNumeric',
         topK: 500
@@ -237,8 +342,16 @@ export const VotingSimilarityPartyExcludes = async (nameDisplayAs: string, party
 }
 
 
-export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING") => {
-    
+export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
+    const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
+
     let cypher;
 
     if (partyName) {
@@ -247,6 +360,8 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             cypher = `MATCH (mp:Mp)-[]-(d:Division)
             WHERE mp.partyName ${partyOperator} "${partyName}"
             AND d.Category = "${voteCategory}"
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
@@ -254,29 +369,33 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)
             WHERE mp.partyName ${partyOperator} "${partyName}"
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
             LIMIT ${limit}`;
-        }        
+        }
     } else {
         if (voteCategory) {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
             WHERE d.Category = "${voteCategory}"
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
+            WHERE d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount 
             LIMIT ${limit}`;
         }
-        
     }
-    
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -291,17 +410,27 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-    
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
     let cypher;
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
+    const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
 
     if (ayeOrNo) {
 
-        let ayeOrNoBool = ayeOrNo === "aye" ? true : false;    
+        let ayeOrNoBool = ayeOrNo === "aye" ? true : false;
 
         if (voteCategory) {
             cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
             WHERE r.votedAye = ${ayeOrNoBool}
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             AND d.Category = "${voteCategory}"
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
@@ -310,28 +439,34 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: st
         } else {
             cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
             WHERE r.votedAye = ${ayeOrNoBool}
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
             RETURN d.Title, edgeCount 
             LIMIT ${limit}`;
-        }        
+        }
     } else {
-        if (voteCategory) {            
+        if (voteCategory) {
             cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
             WHERE d.Category = "${voteCategory}"
+            AND d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
             RETURN d.Title, edgeCount 
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
+            WHERE d.Date > datetime(${fromDateValue}) 
+            AND d.Date < datetime(${toDateValue}) 
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
             RETURN d.Title, edgeCount 
-            LIMIT ${limit}`;            
+            LIMIT ${limit}`;
         }
     }
-    
+
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;

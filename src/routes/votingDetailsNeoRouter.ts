@@ -11,15 +11,18 @@ votingDetailsNeoRouter.get('/', async (req: Request, res: Response) => {
   const id: any = Number(req?.query?.id);
   const type = req?.query?.type;
 
-  logger.info('get voting details for ', id, type);
+  // @ts-ignore
+  const fromDate: string = req?.query?.fromDate;
+  // @ts-ignore
+  const toDate: string = req?.query?.toDate;
 
   let result: any;
   if (type === 'votedAye') {
-    result = await votedAye(id);
+    result = await votedAye(id, fromDate, toDate);
   } else if (type === 'votedNo') {
-    result = await votedNo(id);
+    result = await votedNo(id, fromDate, toDate);
   } else {
-    result = await voted(id);
+    result = await voted(id, fromDate, toDate);
   }
 
   res.json(result);

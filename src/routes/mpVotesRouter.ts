@@ -22,8 +22,14 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const voteCategory = req?.query?.voteCategory;
 
-  let partyToQuery = partyIncludes || partyExcludes;  
-  
+  // @ts-ignore
+  const fromDate = req?.query?.fromDate;
+
+  // @ts-ignore
+  const toDate = req?.query?.toDate;
+
+  let partyToQuery = partyIncludes || partyExcludes;
+
   // @ts-ignore
   if (partyToQuery.toLowerCase() === 'any') {
     partyToQuery = undefined;
@@ -35,8 +41,8 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   }
 
   // @ts-ignore
-  const result = await mostOrLeastVotingMps(partyToQuery, voteCategory, partyOperator, limit, orderby);
-    
+  const result = await mostOrLeastVotingMps(partyToQuery, voteCategory, partyOperator, limit, orderby, fromDate, toDate);
+
   if (result && result.records) {
     // @ts-ignore
     res.json(result.records);

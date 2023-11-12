@@ -5,14 +5,20 @@ const logger = require('../logger');
 const votingSummaryNeoRouter = express.Router();
 
 votingSummaryNeoRouter.get('/', async (req: Request, res: Response) => {
-  
+
   const id: any = req?.query?.id;
 
+  // @ts-ignore
+  const fromDate: string = req?.query?.fromDate;
+
+  // @ts-ignore
+  const toDate: string = req?.query?.toDate;
+
   logger.info("Getting voting summary from NEO for MP with id " + id);
-  
-  const totalVotesResponse: any = await totalVotes(id);
-  const votedAyeResponse = await votedAyeCount(id);
-  const votedNoResponse = await votedNoCount(id);
+
+  const totalVotesResponse: any = await totalVotes(id, fromDate, toDate);
+  const votedAyeResponse = await votedAyeCount(id, fromDate, toDate);
+  const votedNoResponse = await votedNoCount(id, fromDate, toDate);
 
   const votingSummary = {
     total: totalVotesResponse.records[0]._fields[0].low,

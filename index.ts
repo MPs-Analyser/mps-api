@@ -8,10 +8,8 @@ import mpStatsRouter from './src/routes/mpStatsRouter';
 import mpNamesRouter from './src/routes/mpNamesRouter';
 import divisionNamesRouter from './src/routes/divisionNamesRouter';
 
-import mostSimilarVotingRecordRouter from './src/routes/mostSimilarVotingRecordRouter';
 import mostSimilarVotingRecordNeoRouter from './src/routes/mostSimilarVotingRecordNeoRouter';
 
-import votingDetails from './src/routes/votingDetails';
 import votingDetailsNeoRouter from './src/routes/votingDetailsNeoRouter';
 
 import mpDetailsRouter from './src/routes/mpDetailsRouter';
@@ -19,7 +17,6 @@ import mpDetailsRouter from './src/routes/mpDetailsRouter';
 import mpVotesRouter from './src/routes/mpVotesRouter';
 import divisionVotesRouter from './src/routes/divisionVotesRouter';
 
-import votingSummaryRouter from './src/routes/votingSummaryRouter';
 import votingSummaryNeoRouter from './src/routes/votingSummaryNeoRouter';
 
 const logger = require('./src/logger');
@@ -36,15 +33,12 @@ app.use("/mps", mpStatsRouter);
 app.use("/mpnames", mpNamesRouter);  
 app.use("/divisionnames", divisionNamesRouter);  
 
-app.use("/votingSimilarity", mostSimilarVotingRecordRouter);  
 app.use("/votingSimilarityNeo", mostSimilarVotingRecordNeoRouter);  
 
 app.use("/mpDetails", mpDetailsRouter);  
 
-app.use("/votingDetails", votingDetails);  
 app.use("/votingDetailsNeo", votingDetailsNeoRouter);  
 
-app.use("/votingSummary", votingSummaryRouter);  
 app.use("/votingSummaryNeo", votingSummaryNeoRouter);  
 
 app.use("/insights/mpvotes", mpVotesRouter);  
