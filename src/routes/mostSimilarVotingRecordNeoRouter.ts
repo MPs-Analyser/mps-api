@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { votingSimilarity, VotingSimilarityPartyExcludes, votingSimilarityPartyIncludes } from "../databases/neoManager";
+import { votingSimilarity } from "../databases/neoManager";
 import { log } from 'console';
 
 const mostSimilarVotingRecordRouter = express.Router();
@@ -23,17 +23,27 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const partyExcludes = req?.query?.partyExcludes;
 
+  const id: number = Number(req?.query?.id);
+
+  // @ts-ignore
+  const fromDate: string = req?.query?.fromDate;
+
+  // @ts-ignore
+  const toDate: string = req?.query?.toDate;
+
   let result;
+  let type;
+  let partyName;
   if (partyIncludes) {
-    // @ts-ignore
-    result = await votingSimilarityPartyIncludes(name, partyIncludes, limit, orderby);
+    type = "includeParty";
+    partyName = partyIncludes;
   } else if (partyExcludes) {
-    // @ts-ignore
-    result = await VotingSimilarityPartyExcludes(name, partyExcludes, limit, orderby);
-  } else {
-    // @ts-ignore
-    result = await votingSimilarity(name, limit, orderby);
+    type = "excludeParty";
+    partyName = partyExcludes;
   }
+
+  // @ts-ignore
+  result = await votingSimilarity(id, partyName, limit, orderby, type);
 
   // @ts-ignore
   const formattedResult = []

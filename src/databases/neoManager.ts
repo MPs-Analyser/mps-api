@@ -1,8 +1,9 @@
 import { log } from 'console';
 import { Division } from '../models/divisions';
-import { responseWrapper, responseValue, Mp } from '../models/mps';
+import { Mp } from '../models/mps';
 import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
+import { cyphers } from "./cyphers";
 
 const EARLIEST_FROM_DATE = "2015-01-01";
 
@@ -36,7 +37,7 @@ const runCypher = async (cypher: string, session: any) => {
         const result = await session.run(cypher);
         return result;
     } catch (error) {
-
+        logger.error("ERROR RUNNING CYPHER: " + error);
     }
 }
 
@@ -258,82 +259,39 @@ export const votedNo = async (id: number, fromDate: string = EARLIEST_FROM_DATE,
     }
 }
 
-export const votingSimilarity = async (nameDisplayAs: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-
-    const cypher = `CALL gds.nodeSimilarity.stream('g1', {
-        relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 500
-    })
-    YIELD node1, node2, similarity
-    WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity    
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")    
-    RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT ${limit}`;
+/**
+ * find mps with most or least similar voting records
+ * TODO - want to include voting types parameter (eg. immigration, EU) and date range (cant work out how to do dates as they are stored on divisions not mps)
+ * @param id 
+ * @param partyName 
+ * @param limit 
+ * @param orderBy 
+ * @param type 
+ * @returns 
+ */
+export const votingSimilarity = async (id: number, partyName: string, limit: number = 40, orderBy: string = "DESCENDING", type: string) => {
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
+    const neoIdCypher = `MATCH (n:Mp {id: ${id}}) RETURN ID(n)`;
+    let neoId;
     try {
-        const result = await runCypher(cypher, session);
-        return result;
-    } finally {
-        session.close();
-    }
+        const neoIdResult = await runCypher(neoIdCypher, session);
+        logger.info("check me out >>> " + JSON.stringify(neoIdResult.records));
+        neoId = neoIdResult.records[0]._fields[0].low;
+        logger.info("reult is " + neoId)
 
-}
-
-export const votingSimilarityPartyIncludes = async (nameDisplayAs: string, partyName: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-
-    const cypher = `CALL gds.nodeSimilarity.stream('g1', {
-        relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 500
-    })
-    YIELD node1, node2, similarity
-    WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity  
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")
-    AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName = "${partyName}")  
-    OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName = "${partyName}") )
-    RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT ${limit}`;
-
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
-    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
-    const session = driver.session();
-
-    try {
-        const result = await runCypher(cypher, session);
-        return result;
-    } finally {
-        session.close();
-    }
-}
-
-export const VotingSimilarityPartyExcludes = async (nameDisplayAs: string, partyName: string, limit: number = 40, orderBy: string = "DESCENDING") => {
-
-    const cypher = `CALL gds.nodeSimilarity.stream('g1', {
-        relationshipWeightProperty: 'votedAyeNumeric',
-        topK: 500
-    })
-    YIELD node1, node2, similarity
-    WITH gds.util.asNode(node1) AS mp1, gds.util.asNode(node2) AS mp2, similarity  
-    WHERE (mp1.nameDisplayAs = "${nameDisplayAs}")
-    AND((mp1.nameDisplayAs <> "${nameDisplayAs}" AND mp1.partyName <> "${partyName}" )  
-    OR (mp2.nameDisplayAs <> "${nameDisplayAs}" AND mp2.partyName <> "${partyName}" ) )
-    RETURN mp1.nameDisplayAs, mp1.partyName, mp2.nameDisplayAs, mp2.partyName, similarity
-    ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
-    LIMIT ${limit}`;
-
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
-    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
-    const session = driver.session();
-
-    try {
+        let cypher;
+        if (type === "excludeParty") {
+            cypher = cyphers.votingSimilarityParty(neoId, partyName, orderBy, limit, "<>");
+        } else if (type === "includeParty") {
+            cypher = cyphers.votingSimilarityParty(neoId, partyName, orderBy, limit, "=");
+        } else {
+            cypher = cyphers.votingSimilarity(neoId, orderBy, limit);
+        }
+        
         const result = await runCypher(cypher, session);
         return result;
     } finally {
