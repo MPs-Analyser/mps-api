@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { votingSimilarity, votingSimilarityFiltered } from "../databases/neoManager";
-import { log } from 'console';
+import { constants } from "../constants";
 
 const mostSimilarVotingRecordRouter = express.Router();
 
@@ -31,6 +31,16 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const toDate: string = req?.query?.toDate;
 
+  const today = new Date();
+  const formattedToday = today.toISOString().split('T')[0];
+
+  let isFilteredgraphRequired = true;
+  if (constants.EARLIEST_FROM_DATE === fromDate && toDate === formattedToday) {
+    //full date range applied so we dont need to create a filtered graph;
+    isFilteredgraphRequired = false;
+  }
+
+
   let result;
   let type;
   let partyName;
@@ -42,9 +52,9 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     partyName = partyExcludes;
   }
 
-  if (fromDate && toDate) {
+  if (isFilteredgraphRequired) {
     // @ts-ignore
-    result = votingSimilarityFiltered(id, partyName, limit, orderby, type, fromDate, toDate);
+    result = await votingSimilarityFiltered(id, partyName, limit, orderby, type, fromDate, toDate);
   } else {
     // @ts-ignore
     result = await votingSimilarity(id, partyName, limit, orderby, type);

@@ -3,8 +3,7 @@ import { Mp } from '../models/mps';
 import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
 import { cyphers } from "./cyphers";
-
-const EARLIEST_FROM_DATE = "2015-01-01";
+import { constants } from "../constants";
 
 const logger = require('../logger');
 //hello
@@ -83,7 +82,7 @@ const dateStringToNeo = (value: string) => {
     return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
 }
 
-export const totalVotes = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const totalVotes = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -112,7 +111,7 @@ export const totalVotes = async (id: number, fromDate: string = EARLIEST_FROM_DA
     }
 }
 
-export const votedAyeCount = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const votedAyeCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -141,7 +140,7 @@ export const votedAyeCount = async (id: number, fromDate: string = EARLIEST_FROM
     }
 }
 
-export const votedNoCount = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const votedNoCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -171,7 +170,7 @@ export const votedNoCount = async (id: number, fromDate: string = EARLIEST_FROM_
     }
 }
 
-export const voted = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -200,7 +199,7 @@ export const voted = async (id: number, fromDate: string = EARLIEST_FROM_DATE, t
     }
 }
 
-export const votedAye = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -229,7 +228,7 @@ export const votedAye = async (id: number, fromDate: string = EARLIEST_FROM_DATE
     }
 }
 
-export const votedNo = async (id: number, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -311,7 +310,7 @@ export const generateGraphName = () => {
     return result;
   }
 
-export const votingSimilarityFiltered = async (id: number, partyName: string, limit: number = 40, orderBy: string = "DESCENDING", type: string, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const votingSimilarityFiltered = async (id: number, partyName: string, limit: number = 40, orderBy: string = "DESCENDING", type: string, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
@@ -332,7 +331,8 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
         const graphName = generateGraphName();
 
         //create filterd graph containing only divisions within the specified date range 
-        const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Division and AND n.DateNumeric > ${fromDateValue}) AND n.DateNumeric < ${toDateValue}', '*')`
+        const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Mp OR (n:Division AND n.DateNumeric > ${fromDateValue} AND n.DateNumeric < ${toDateValue})', 'r:VOTED_FOR')`
+        // const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Division AND n.DateNumeric > ${fromDateValue} AND n.DateNumeric < ${toDateValue}', '*')`
         const filterdGraphResult = await runCypher(filteredCypher, session);        
 
         //find the neo id of the MP we querying
@@ -351,7 +351,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
         const result = await runCypher(cypher, session);
 
         //drop the filterd graph we just created. No need to wait for this step to finish
-        runCypher(`CALL gds.graph.drop('${graphName}',false) YIELD graphName`, session);
+        await runCypher(`CALL gds.graph.drop('${graphName}',false) YIELD graphName`, session);
         
         return result;
     } finally {
@@ -359,7 +359,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
     }
 }
 
-export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -427,7 +427,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     let cypher;
 
