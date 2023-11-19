@@ -1,5 +1,5 @@
 export const cyphers = {
-    votingSimilarity: (neoId:number, orderBy:string, limit:number) => `CALL gds.nodeSimilarity.filtered.stream('g1', {
+    votingSimilarity: (graphName: string, neoId:number, orderBy:string, limit:number) => `CALL gds.nodeSimilarity.filtered.stream('${graphName}', {
         relationshipWeightProperty: 'votedAyeNumeric',
         topK: 500,
         sourceNodeFilter: ${neoId}
@@ -9,7 +9,7 @@ export const cyphers = {
         RETURN mp1.nameDisplayAs, mp2.nameDisplayAs, mp2.partyName, similarity
         ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
         LIMIT ${limit}`,
-    votingSimilarityParty: (neoId:number, partyName:string, orderBy:string, limit:number, operator:string) => `CALL gds.nodeSimilarity.filtered.stream('g1', {
+    votingSimilarityParty: (graphName: string, neoId:number, partyName:string, orderBy:string, limit:number, operator:string) => `CALL gds.nodeSimilarity.filtered.stream('${graphName}', {
         relationshipWeightProperty: 'votedAyeNumeric',
         topK: 500,
         sourceNodeFilter: ${neoId}
@@ -21,7 +21,7 @@ export const cyphers = {
         ORDER BY similarity ${orderBy}, mp1.nameDisplayAs, mp2.nameDisplayAs
         LIMIT ${limit}`,
 
-    votingSimilarityIncludeParty: (neoId:number, partyName:string, orderBy:string, limit:number) => `CALL gds.nodeSimilarity.filtered.stream('g1', {
+    votingSimilarityIncludeParty: (graphName: string, neoId:number, partyName:string, orderBy:string, limit:number) => `CALL gds.nodeSimilarity.filtered.stream('${graphName}', {
             relationshipWeightProperty: 'votedAyeNumeric',
             topK: 500,
             sourceNodeFilter: ${neoId}

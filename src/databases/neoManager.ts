@@ -1,4 +1,3 @@
-import { log } from 'console';
 import { Division } from '../models/divisions';
 import { Mp } from '../models/mps';
 import { VotedFor } from '../models/relationships';
@@ -278,6 +277,7 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
     const neoIdCypher = `MATCH (n:Mp {id: ${id}}) RETURN ID(n)`;
     let neoId;
     try {
+
         const neoIdResult = await runCypher(neoIdCypher, session);
         logger.info("check me out >>> " + JSON.stringify(neoIdResult.records));
         neoId = neoIdResult.records[0]._fields[0].low;
@@ -285,13 +285,13 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
 
         let cypher;
         if (type === "excludeParty") {
-            cypher = cyphers.votingSimilarityParty(neoId, partyName, orderBy, limit, "<>");
+            cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "<>");
         } else if (type === "includeParty") {
-            cypher = cyphers.votingSimilarityParty(neoId, partyName, orderBy, limit, "=");
+            cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "=");
         } else {
-            cypher = cyphers.votingSimilarity(neoId, orderBy, limit);
+            cypher = cyphers.votingSimilarity("similarityGraph", neoId, orderBy, limit);
         }
-        
+
         const result = await runCypher(cypher, session);
         return result;
     } finally {
@@ -299,6 +299,65 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
     }
 }
 
+export const generateGraphName = () => {
+    const length = 6;
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+  
+    for (let i = 0; i < length; i++) {
+      result += characters[Math.floor(Math.random() * characters.length)];
+    }
+  
+    return result;
+  }
+
+export const votingSimilarityFiltered = async (id: number, partyName: string, limit: number = 40, orderBy: string = "DESCENDING", type: string, fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    const neoIdCypher = `MATCH (n:Mp {id: ${id}}) RETURN ID(n)`;
+
+    try {
+
+        //set to date to today if not provided 
+        if (!toDate) {
+            toDate = new Date().toISOString().substr(0, 10);
+        }
+
+        const fromDateValue = new Date(fromDate).getTime();
+        const toDateValue = new Date(toDate).getTime();
+
+        const graphName = generateGraphName();
+
+        //create filterd graph containing only divisions within the specified date range 
+        const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Division and AND n.DateNumeric > ${fromDateValue}) AND n.DateNumeric < ${toDateValue}', '*')`
+        const filterdGraphResult = await runCypher(filteredCypher, session);        
+
+        //find the neo id of the MP we querying
+        const neoIdResult = await runCypher(neoIdCypher, session);        
+        const neoId = neoIdResult.records[0]._fields[0].low;
+        
+        let cypher;
+        if (type === "excludeParty") {
+            cypher = cyphers.votingSimilarityParty(graphName, neoId, partyName, orderBy, limit, "<>");
+        } else if (type === "includeParty") {
+            cypher = cyphers.votingSimilarityParty(graphName, neoId, partyName, orderBy, limit, "=");
+        } else {
+            cypher = cyphers.votingSimilarity(graphName, neoId, orderBy, limit);
+        }        
+
+        const result = await runCypher(cypher, session);
+
+        //drop the filterd graph we just created. No need to wait for this step to finish
+        runCypher(`CALL gds.graph.drop('${graphName}',false) YIELD graphName`, session);
+        
+        return result;
+    } finally {
+        session.close();
+    }
+}
 
 export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = EARLIEST_FROM_DATE, toDate: string) => {
 
@@ -437,25 +496,6 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: st
     } finally {
         session.close();
     }
-}
-
-export const setupDataScience = async () => {
-
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
-
-    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
-    const session = driver.session();
-
-    try {
-        await runCypher(`CALL gds.graph.drop('g1',false) YIELD graphName`, session);
-        await runCypher(`CALL gds.graph.project('g1', ['Mp', 'Division'], ['VOTED_FOR'],  { relationshipProperties: ['votedAyeNumeric'] })`, session);
-    } catch (error) {
-        //contraint already exists so proceed
-    }
-
-    session.close();
-
 }
 
 export const cleanUp = () => {

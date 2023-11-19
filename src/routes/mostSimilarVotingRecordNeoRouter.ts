@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { votingSimilarity } from "../databases/neoManager";
+import { votingSimilarity, votingSimilarityFiltered } from "../databases/neoManager";
 import { log } from 'console';
 
 const mostSimilarVotingRecordRouter = express.Router();
@@ -42,8 +42,13 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     partyName = partyExcludes;
   }
 
-  // @ts-ignore
-  result = await votingSimilarity(id, partyName, limit, orderby, type);
+  if (fromDate && toDate) {
+    // @ts-ignore
+    result = votingSimilarityFiltered(id, partyName, limit, orderby, type, fromDate, toDate);
+  } else {
+    // @ts-ignore
+    result = await votingSimilarity(id, partyName, limit, orderby, type);
+  }
 
   // @ts-ignore
   const formattedResult = []
