@@ -14,11 +14,14 @@ votingSummaryNeoRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const toDate: string = req?.query?.toDate;
 
+  // @ts-ignore
+  const category: string = req?.query?.category;
+
   logger.info("Getting voting summary from NEO for MP with id " + id);
 
-  const totalVotesResponse: any = await totalVotes(id, fromDate, toDate);
-  const votedAyeResponse = await votedAyeCount(id, fromDate, toDate);
-  const votedNoResponse = await votedNoCount(id, fromDate, toDate);
+  const totalVotesResponse: any = await totalVotes(id, fromDate, toDate, category);
+  const votedAyeResponse = await votedAyeCount(id, fromDate, toDate, category);
+  const votedNoResponse = await votedNoCount(id, fromDate, toDate, category);
 
   const votingSummary = {
     total: totalVotesResponse.records[0]._fields[0].low,

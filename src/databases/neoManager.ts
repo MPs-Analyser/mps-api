@@ -82,7 +82,7 @@ const dateStringToNeo = (value: string) => {
     return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
 }
 
-export const totalVotes = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const totalVotes = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -96,6 +96,7 @@ export const totalVotes = async (id: number, fromDate: string = constants.EARLIE
      WHERE (s.id = ${id}) 
      AND d.Date > datetime(${fromDateValue}) 
      AND d.Date < datetime(${toDateValue}) 
+     AND (d.Category= "${category}" OR "${category}"="Any")
      RETURN COUNT(d)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -111,7 +112,7 @@ export const totalVotes = async (id: number, fromDate: string = constants.EARLIE
     }
 }
 
-export const votedAyeCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const votedAyeCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -125,7 +126,9 @@ export const votedAyeCount = async (id: number, fromDate: string = constants.EAR
     WHERE (s.id = ${id} 
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
-    AND r.votedAye) RETURN COUNT(*)`;
+    AND r.votedAye) 
+    AND (d.Category= "${category}" OR "${category}"="Any")
+    RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
@@ -140,7 +143,7 @@ export const votedAyeCount = async (id: number, fromDate: string = constants.EAR
     }
 }
 
-export const votedNoCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const votedNoCount = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -155,6 +158,7 @@ export const votedNoCount = async (id: number, fromDate: string = constants.EARL
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
     AND NOT r.votedAye) 
+    AND (d.Category= "${category}" OR "${category}"="Any")
     RETURN COUNT(*)`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
