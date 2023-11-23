@@ -174,7 +174,7 @@ export const votedNoCount = async (id: number, fromDate: string = constants.EARL
     }
 }
 
-export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -188,6 +188,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
     WHERE (s.id = ${id}) 
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
+    AND (d.Category= "${category}" OR "${category}"="Any")
     RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -203,7 +204,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
     }
 }
 
-export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -217,6 +218,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     WHERE (s.id = ${id} AND r.votedAye) 
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue})     
+    AND (d.Category= "${category}" OR "${category}"="Any")
     RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -232,7 +234,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     }
 }
 
-export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -246,6 +248,7 @@ export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_
     WHERE (s.id = ${id} AND NOT r.votedAye) 
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
+    AND (d.Category= "${category}" OR "${category}"="Any")
     RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
