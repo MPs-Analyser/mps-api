@@ -309,13 +309,13 @@ export const generateGraphName = () => {
     const length = 6;
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
-  
+
     for (let i = 0; i < length; i++) {
-      result += characters[Math.floor(Math.random() * characters.length)];
+        result += characters[Math.floor(Math.random() * characters.length)];
     }
-  
+
     return result;
-  }
+}
 
 export const votingSimilarityFiltered = async (id: number, partyName: string, limit: number = 40, orderBy: string = "DESCENDING", type: string, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
@@ -340,12 +340,12 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
         //create filterd graph containing only divisions within the specified date range 
         const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Mp OR (n:Division AND n.DateNumeric > ${fromDateValue} AND n.DateNumeric < ${toDateValue})', 'r:VOTED_FOR')`
         // const filteredCypher = `CALL gds.graph.filter('${graphName}','similarityGraph', 'n:Division AND n.DateNumeric > ${fromDateValue} AND n.DateNumeric < ${toDateValue}', '*')`
-        const filterdGraphResult = await runCypher(filteredCypher, session);        
+        const filterdGraphResult = await runCypher(filteredCypher, session);
 
         //find the neo id of the MP we querying
-        const neoIdResult = await runCypher(neoIdCypher, session);        
+        const neoIdResult = await runCypher(neoIdCypher, session);
         const neoId = neoIdResult.records[0]._fields[0].low;
-        
+
         let cypher;
         if (type === "excludeParty") {
             cypher = cyphers.votingSimilarityParty(graphName, neoId, partyName, orderBy, limit, "<>");
@@ -353,13 +353,13 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
             cypher = cyphers.votingSimilarityParty(graphName, neoId, partyName, orderBy, limit, "=");
         } else {
             cypher = cyphers.votingSimilarity(graphName, neoId, orderBy, limit);
-        }        
+        }
 
         const result = await runCypher(cypher, session);
 
         //drop the filterd graph we just created. No need to wait for this step to finish
         await runCypher(`CALL gds.graph.drop('${graphName}',false) YIELD graphName`, session);
-        
+
         return result;
     } finally {
         session.close();
@@ -388,7 +388,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)
@@ -397,7 +397,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
             LIMIT ${limit}`;
         }
     } else {
@@ -408,7 +408,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
@@ -416,7 +416,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND d.Date < datetime(${toDateValue}) 
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount 
+            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
             LIMIT ${limit}`;
         }
     }
@@ -434,7 +434,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
 
     let cypher;
 
@@ -450,45 +450,27 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, voteCategory: st
 
         let ayeOrNoBool = ayeOrNo === "aye" ? true : false;
 
-        if (voteCategory) {
-            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
+        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
             WHERE r.votedAye = ${ayeOrNoBool}
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
-            AND d.Category = "${voteCategory}"
+            AND (d.Category= "${category}" OR "${category}"="Any")
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount 
+            RETURN d.Title, edgeCount, d.DivisionId
             LIMIT ${limit}`;
-        } else {
-            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
-            WHERE r.votedAye = ${ayeOrNoBool}
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            WITH d, COUNT(*) AS edgeCount
-            ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount 
-            LIMIT ${limit}`;
-        }
+
     } else {
-        if (voteCategory) {
-            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
-            WHERE d.Category = "${voteCategory}"
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            WITH d, COUNT(*) AS edgeCount
-            ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount 
-            LIMIT ${limit}`;
-        } else {
-            cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)        
+
+        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)                    
             WHERE d.Date > datetime(${fromDateValue}) 
+            AND (d.Category= "${category}" OR "${category}"="Any")
             AND d.Date < datetime(${toDateValue}) 
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount 
+            RETURN d.Title, edgeCount, d.DivisionId
             LIMIT ${limit}`;
-        }
+
     }
 
 

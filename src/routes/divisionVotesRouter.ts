@@ -7,8 +7,6 @@ const divisionVotesRouter = express.Router();
 
 divisionVotesRouter.get('/', async (req: Request, res: Response) => {
 
-  console.log('Get divisionj insights ', req.query);
-
   // @ts-ignore
   const limit: string = req?.query?.limit;
 
@@ -19,7 +17,7 @@ divisionVotesRouter.get('/', async (req: Request, res: Response) => {
   const ayeOrNo = req?.query?.ayeorno;
 
   // @ts-ignore
-  const voteCategory = req?.query?.voteCategory;
+  const category: string = req?.query?.category;
 
   // @ts-ignore
   const fromDate = req?.query?.fromDate;
@@ -28,7 +26,7 @@ divisionVotesRouter.get('/', async (req: Request, res: Response) => {
   const toDate = req?.query?.toDate;
 
   // @ts-ignore
-  const result = await mostOrLeastVotedDivision(ayeOrNo, voteCategory, limit, orderby, fromDate, toDate);
+  const result = await mostOrLeastVotedDivision(ayeOrNo, category, limit, orderby, fromDate, toDate);
 
   console.log("reuslt ", result);
 
