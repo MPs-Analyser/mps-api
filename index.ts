@@ -11,6 +11,7 @@ import divisionNamesRouter from './src/routes/divisionNamesRouter';
 import mostSimilarVotingRecordNeoRouter from './src/routes/mostSimilarVotingRecordNeoRouter';
 
 import votingDetailsNeoRouter from './src/routes/votingDetailsNeoRouter';
+import searchMpsRouter from './src/routes/searchMpsRouter';
 
 import mpDetailsRouter from './src/routes/mpDetailsRouter';
 
@@ -36,6 +37,7 @@ app.use("/divisionnames", divisionNamesRouter);
 app.use("/votingSimilarityNeo", mostSimilarVotingRecordNeoRouter);  
 
 app.use("/mpDetails", mpDetailsRouter);  
+app.use("/searchMps", searchMpsRouter);  
 
 app.use("/votingDetailsNeo", votingDetailsNeoRouter);  
 

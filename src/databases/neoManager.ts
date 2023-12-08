@@ -56,6 +56,23 @@ export const getMpNames = async () => {
     }
 }
 
+export const searchMps = async () => {
+
+    logger.debug('Searching MPs');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(`MATCH (n:Mp) RETURN n.nameDisplayAs, n.id`, session);
+        return result;
+    } finally {
+        session.close();
+    }
+}
+
 export const getDivisionNames = async () => {
 
     logger.debug('Getting DIVISION Names...');
