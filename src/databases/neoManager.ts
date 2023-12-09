@@ -66,7 +66,10 @@ export const searchMps = async () => {
     const session = driver.session();
 
     try {
-        const result = await runCypher(`MATCH (n:Mp) RETURN n.nameDisplayAs, n.id`, session);
+        const result = await runCypher(`
+        MATCH (n:Mp) 
+        RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`, 
+        session);
         return result;
     } finally {
         session.close();

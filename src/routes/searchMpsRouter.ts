@@ -13,16 +13,21 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const formattedResult = []
 
-  if (result && result.records && Array.isArray(result.records)) {
-    console.log("check ", result.records);
+  if (result && result.records && Array.isArray(result.records)) {    
     // @ts-ignore
     result.records.forEach(i => {
       // @ts-ignore          
       formattedResult.push(
-        { name: i._fields[0], id: i._fields[1].low }
+        { 
+          name: i._fields[0], 
+          id: i._fields[1].low,
+          gender: i._fields[2],
+          startDate: i._fields[3],
+          party: i._fields[4],
+        }
       )
     })
-  }
+  }  
 
   // @ts-ignore
   res.json(formattedResult)
