@@ -8,7 +8,10 @@ searchDivisionsRouter.get('/', async (req: Request, res: Response) => {
   console.log('Search MPs ', req.query);
 
   // @ts-ignore
-  const result = await searchDivisions();
+  const category: string = req?.query?.category || 'Any';
+
+  // @ts-ignore
+  const result = await searchDivisions({ category });
 
   // @ts-ignore
   const formattedResult = []
@@ -21,7 +24,7 @@ searchDivisionsRouter.get('/', async (req: Request, res: Response) => {
         { 
           category: i._fields[0], 
           title: i._fields[1],
-          id: i._fields[2],
+          id: i._fields[2].low,
           date: i._fields[3],
           ayeCount: i._fields[4],
           noCount: i._fields[5],

@@ -56,7 +56,7 @@ export const getMpNames = async () => {
     }
 }
 
-export const searchMps = async () => {
+export const searchMps = async ({ party="Any" }) => {
 
     logger.debug('Searching MPs');
 
@@ -68,6 +68,7 @@ export const searchMps = async () => {
     try {
         const result = await runCypher(`
         MATCH (n:Mp) 
+        WHERE n.partyName = "${party}" OR "${party}" = "Any"
         RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`, 
         session);
         return result;
@@ -76,7 +77,7 @@ export const searchMps = async () => {
     }
 }
 
-export const searchDivisions = async () => {
+export const searchDivisions = async ({ category="Any"}) => {
 
     logger.debug('Searching MPs');
 
@@ -88,6 +89,7 @@ export const searchDivisions = async () => {
     try {
         const result = await runCypher(`
         MATCH (n:Division) 
+        WHERE n.Category = "${category}" OR "${category}" = "Any"
         RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`, 
         session);
         return result;

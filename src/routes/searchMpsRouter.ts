@@ -8,7 +8,10 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
   console.log('Search MPs ', req.query);
 
   // @ts-ignore
-  const result = await searchMps();
+  const party: string = req?.query?.party || 'Any';
+
+  // @ts-ignore
+  const result = await searchMps({ party });
 
   // @ts-ignore
   const formattedResult = []
