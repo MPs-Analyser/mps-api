@@ -76,6 +76,27 @@ export const searchMps = async () => {
     }
 }
 
+export const searchDivisions = async () => {
+
+    logger.debug('Searching MPs');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(`
+        MATCH (n:Division) 
+        RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`, 
+        session);
+        return result;
+    } finally {
+        session.close();
+    }
+}
+
+
 export const getDivisionNames = async () => {
 
     logger.debug('Getting DIVISION Names...');

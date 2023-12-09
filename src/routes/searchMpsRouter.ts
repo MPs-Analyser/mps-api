@@ -14,6 +14,7 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
   const formattedResult = []
 
   if (result && result.records && Array.isArray(result.records)) {    
+    
     // @ts-ignore
     result.records.forEach(i => {
       // @ts-ignore          
