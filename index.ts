@@ -20,7 +20,7 @@ import mpDetailsRouter from './src/routes/mpDetailsRouter';
 import mpVotesRouter from './src/routes/mpVotesRouter';
 import divisionVotesRouter from './src/routes/divisionVotesRouter';
 
-import votingSummaryNeoRouter from './src/routes/votingSummaryNeoRouter';
+import voteCountsRouter from './src/routes/voteCountsRouter';
 
 const logger = require('./src/logger');
 
@@ -45,7 +45,7 @@ app.use("/searchDivisions", searchDivisionsRouter);
 
 app.use("/votingDetailsNeo", votingDetailsNeoRouter);  
 
-app.use("/votingSummaryNeo", votingSummaryNeoRouter);  
+app.use("/votecounts", voteCountsRouter);  
 
 app.use("/insights/mpvotes", mpVotesRouter);  
 app.use("/insights/divisionvotes", divisionVotesRouter);  

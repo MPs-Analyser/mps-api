@@ -56,12 +56,12 @@ export const getMpNames = async () => {
     }
 }
 
-export const searchMps = async ({ party="Any" }) => {
+export const searchMps = async ({ party = "Any" }) => {
 
     logger.debug('Searching MPs');
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    
+
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
@@ -69,20 +69,20 @@ export const searchMps = async ({ party="Any" }) => {
         const result = await runCypher(`
         MATCH (n:Mp) 
         WHERE n.partyName = "${party}" OR "${party}" = "Any"
-        RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`, 
-        session);
+        RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`,
+            session);
         return result;
     } finally {
         session.close();
     }
 }
 
-export const searchDivisions = async ({ category="Any"}) => {
+export const searchDivisions = async ({ category = "Any" }) => {
 
     logger.debug('Searching MPs');
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    
+
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
@@ -90,8 +90,8 @@ export const searchDivisions = async ({ category="Any"}) => {
         const result = await runCypher(`
         MATCH (n:Division) 
         WHERE n.Category = "${category}" OR "${category}" = "Any"
-        RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`, 
-        session);
+        RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`,
+            session);
         return result;
     } finally {
         session.close();
@@ -124,6 +124,43 @@ export const getDivisionNames = async () => {
 const dateStringToNeo = (value: string) => {
     return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
 }
+
+export const voteCounts = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
+
+    //set to date to today if not provided 
+    if (!toDate) {
+        toDate = new Date().toISOString().substr(0, 10);
+    }
+
+    const fromDateValue = dateStringToNeo(fromDate);
+    const toDateValue = dateStringToNeo(toDate);
+
+    const cypher = `
+    MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE s.id = ${id} 
+    AND d.Date > datetime(${fromDateValue}) 
+    AND d.Date < datetime(${toDateValue}) 
+    AND (d.Category= "${category}" OR "${category}"="Any")
+    WITH d, r
+    RETURN 
+    COUNT(d) as totalVotes, 
+    COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
+    COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes`
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+}
+
+
 
 export const totalVotes = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
 
