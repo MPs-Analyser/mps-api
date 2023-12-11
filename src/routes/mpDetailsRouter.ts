@@ -1,6 +1,5 @@
 import { log } from 'console';
 import express, { Request, Response } from 'express';
-import { votedNoCount, votedAyeCount, totalVotes } from "../databases/neoManager";
 import { getMp } from "../databases/mongoManager"
 
 const mpDetials = express.Router();
