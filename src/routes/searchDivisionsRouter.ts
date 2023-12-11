@@ -29,8 +29,8 @@ searchDivisionsRouter.get('/', async (req: Request, res: Response) => {
           title: i._fields[1],
           id: i._fields[2].low,
           date: i._fields[3],
-          ayeCount: i._fields[4],
-          noCount: i._fields[5],
+          ayeCount: i._fields[4].low,
+          noCount: i._fields[5].low,
         }
       )
     })
