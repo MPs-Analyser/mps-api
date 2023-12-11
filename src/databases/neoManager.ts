@@ -43,8 +43,7 @@ export const getMpNames = async () => {
 
     logger.debug('Getting MP Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
@@ -67,8 +66,8 @@ export const searchMps = async ({ party = "Any", name = "Any" }) => {
 
     const cypher = `
     MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
-    WHERE s.partyName = "${party}" OR "${party}" = "Any"
-    AND s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any"
+    WHERE (s.partyName = "${party}" OR "${party}" = "Any")
+    AND (s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
     WITH s, d, r
     RETURN 
     s.nameDisplayAs,
@@ -82,12 +81,7 @@ export const searchMps = async ({ party = "Any", name = "Any" }) => {
     `;
 
     try {
-        const result = await runCypher(cypher, session);
-        // const result = await runCypher(`
-        // MATCH (n:Mp) 
-        // WHERE n.partyName = "${party}" OR "${party}" = "Any"
-        // RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`,
-        //     session);
+        const result = await runCypher(cypher, session);      
         return result;
     } finally {
         session.close();
@@ -106,8 +100,8 @@ export const searchDivisions = async ({ category = "Any", name = "Any" }) => {
     try {
         const result = await runCypher(`
         MATCH (n:Division) 
-        WHERE n.Category = "${category}" OR "${category}" = "Any"
-        AND n.Title =~ '(?i).*${name}.*' OR "${name}" = "Any"
+        WHERE (n.Category = "${category}" OR "${category}" = "Any")
+        AND (n.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
         RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`,
             session);
         return result;
