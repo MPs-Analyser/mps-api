@@ -65,12 +65,28 @@ export const searchMps = async ({ party = "Any" }) => {
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
+    const cypher = `
+    MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
+    WHERE s.partyName = "${party}" OR "${party}" = "Any"
+    WITH s, d, r
+    RETURN 
+    s.nameDisplayAs,
+    s.gender, 
+    s.membershipStartDate as startDate, 
+    s.partyName as party,
+    s.id,
+    COUNT(d) as totalVotes, 
+    COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
+    COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
+    `;
+
     try {
-        const result = await runCypher(`
-        MATCH (n:Mp) 
-        WHERE n.partyName = "${party}" OR "${party}" = "Any"
-        RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`,
-            session);
+        const result = await runCypher(cypher, session);
+        // const result = await runCypher(`
+        // MATCH (n:Mp) 
+        // WHERE n.partyName = "${party}" OR "${party}" = "Any"
+        // RETURN n.nameDisplayAs, n.id, n.gender, n.membershipStartDate as startDate, n.partyName as party`,
+        //     session);
         return result;
     } finally {
         session.close();
