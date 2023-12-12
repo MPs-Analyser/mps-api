@@ -26,9 +26,10 @@ divisionVotesRouter.get('/', async (req: Request, res: Response) => {
   const toDate = req?.query?.toDate;
 
   // @ts-ignore
-  const result = await mostOrLeastVotedDivision(ayeOrNo, category, limit, orderby, fromDate, toDate);
-
-  console.log("reuslt ", result);
+  const name = req?.query?.name || "Any";
+  
+  // @ts-ignore
+  const result = await mostOrLeastVotedDivision(ayeOrNo, category, limit, orderby, fromDate, toDate, name);
 
   if (result && result.records) {
     // @ts-ignore

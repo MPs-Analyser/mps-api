@@ -17,9 +17,12 @@ voteCountsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const category: string = req?.query?.category;
 
+  // @ts-ignore
+  const name: string = req?.query?.name || 'Any';
+
   logger.info("Getting voting summary from NEO for MP with id " + id);
 
-  const response: any = await voteCounts(id, fromDate, toDate, category);
+  const response: any = await voteCounts(id, fromDate, toDate, category, name);
 
   const votingSummary = {
     total: response.records[0]._fields[0].low,

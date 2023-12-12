@@ -137,7 +137,7 @@ const dateStringToNeo = (value: string) => {
     return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
 }
 
-export const voteCounts = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
+export const voteCounts = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -153,6 +153,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
     AND (d.Category= "${category}" OR "${category}"="Any")
+    AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
     WITH d, r
     RETURN 
     COUNT(d) as totalVotes, 
@@ -172,7 +173,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
     }
 }
 
-export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
+export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -187,6 +188,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
     AND (d.Category= "${category}" OR "${category}"="Any")
+    AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
     RETURN d.DivisionId, d.Title, d.Date, r.votedAye`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -202,7 +204,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
     }
 }
 
-export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
+export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -217,6 +219,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue})     
     AND (d.Category= "${category}" OR "${category}"="Any")
+    AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")    
     RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -232,7 +235,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     }
 }
 
-export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string) => {
+export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -247,6 +250,7 @@ export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_
     AND d.Date > datetime(${fromDateValue}) 
     AND d.Date < datetime(${toDateValue}) 
     AND (d.Category= "${category}" OR "${category}"="Any")
+    AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
     RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -364,7 +368,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
     }
 }
 
-export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name="Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -384,6 +388,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND d.Category = "${voteCategory}"
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
+            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
@@ -393,6 +398,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             WHERE mp.partyName ${partyOperator} "${partyName}"
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
+            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
@@ -404,6 +410,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             WHERE d.Category = "${voteCategory}"
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
+            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
@@ -412,6 +419,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
             WHERE d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
+            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
             RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
@@ -432,7 +440,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string) => {
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name="Any") => {
 
     let cypher;
 
@@ -453,6 +461,7 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
             AND (d.Category= "${category}" OR "${category}"="Any")
+            AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
             RETURN d.Title, edgeCount, d.DivisionId
@@ -464,6 +473,7 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
             WHERE d.Date > datetime(${fromDateValue}) 
             AND (d.Category= "${category}" OR "${category}"="Any")
             AND d.Date < datetime(${toDateValue}) 
+            AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH d, COUNT(*) AS edgeCount
             ORDER BY edgeCount ${orderBy}
             RETURN d.Title, edgeCount, d.DivisionId
