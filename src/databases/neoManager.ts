@@ -55,7 +55,7 @@ export const getMpNames = async () => {
     }
 }
 
-export const searchMps = async ({ party = "Any", name = "Any" }) => {
+export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year=0, votes=">0" }) => {
 
     logger.debug('Searching MPs');
 
@@ -68,14 +68,16 @@ export const searchMps = async ({ party = "Any", name = "Any" }) => {
     MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
     WHERE (s.partyName = "${party}" OR "${party}" = "Any")
     AND (s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-    WITH s, d, r
+    AND (s.gender = "${sex}" OR "${sex}" = "Any")
+    AND (datetime(s.membershipStartDate).year = ${year} OR ${year} = 0)    
+    WITH s, d, r    
     RETURN 
     s.nameDisplayAs,
     s.gender, 
     s.membershipStartDate as startDate, 
     s.partyName as party,
     s.id,
-    COUNT(d) as totalVotes, 
+    COUNT(d) as totalVotes,
     COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
     COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
     `;
