@@ -49,7 +49,7 @@ app.use("/votingDetailsNeo", votingDetailsNeoRouter);
 
 app.use("/votecounts", voteCountsRouter);  
 
-app.use("getparties/", getPartiessRouter);  
+app.use("/getparties/", getPartiessRouter);  
 
 app.use("/insights/mpvotes", mpVotesRouter);  
 app.use("/insights/divisionvotes", divisionVotesRouter);  

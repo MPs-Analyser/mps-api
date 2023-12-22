@@ -16,11 +16,14 @@ getPartiessRouter.get('/', async (req: Request, res: Response) => {
 
   if (result && result.records && Array.isArray(result.records)) {
     // @ts-ignore
-    res.json(result.records)
+    result.records.forEach(i => {
+      formattedResult.push({ name: i._fields[0].properties.partyName, mpsCount: i._fields[0].properties.mpsCount.low,  });
+    });
+    
   }
 
   // @ts-ignore
-  res.json({})
+  res.json(formattedResult)
 
 
 });
