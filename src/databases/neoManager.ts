@@ -90,6 +90,24 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
     }
 }
 
+export const getParties = async () => {
+
+    logger.debug('Getting parties');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(`MATCH (p:Party) RETURN p`, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
 export const searchDivisions = async ({ category = "Any", name = "Any" }) => {
 
     logger.debug('Searching MPs');
