@@ -43,7 +43,7 @@ export const getMpNames = async () => {
 
     logger.debug('Getting MP Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
@@ -55,7 +55,7 @@ export const getMpNames = async () => {
     }
 }
 
-export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year=0, votes=">0" }) => {
+export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0" }) => {
 
     logger.debug('Searching MPs');
 
@@ -83,7 +83,7 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
     `;
 
     try {
-        const result = await runCypher(cypher, session);      
+        const result = await runCypher(cypher, session);
         return result;
     } finally {
         session.close();
@@ -101,6 +101,33 @@ export const getParties = async () => {
 
     try {
         const result = await runCypher(`MATCH (p:Party) RETURN p`, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+export const getDonationSummary = async () => {
+        
+    logger.debug('Getting donation summary');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    const cypher = `
+    MATCH (d:Donar)
+    RETURN
+    d.partyName AS partyName,
+    COUNT(d.partyName) AS donationCount,
+    SUM(TOFLOAT(d.amount)) AS totalDonationValue
+    ORDER BY totalDonationValue DESC;
+    `
+
+    try {
+        const result = await runCypher(cypher, session);        
         return result;
     } finally {
         session.close();
@@ -157,7 +184,7 @@ const dateStringToNeo = (value: string) => {
     return objectToStringWithoutQuotes({ year: Number(value.split("-")[0]), month: Number(value.split("-")[1]), day: Number(value.split("-")[2]) });
 }
 
-export const voteCounts = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
+export const voteCounts = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name = "Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -193,7 +220,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
     }
 }
 
-export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
+export const voted = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name = "Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -224,7 +251,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
     }
 }
 
-export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
+export const votedAye = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name = "Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -255,7 +282,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     }
 }
 
-export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name="Any") => {
+export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, category: string, name = "Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -388,7 +415,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
     }
 }
 
-export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name="Any") => {
+export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
 
     //set to date to today if not provided 
     if (!toDate) {
@@ -460,7 +487,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name="Any") => {
+export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
 
     let cypher;
 
