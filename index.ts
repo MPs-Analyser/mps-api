@@ -22,7 +22,6 @@ import divisionVotesRouter from './src/routes/divisionVotesRouter';
 
 import voteCountsRouter from './src/routes/voteCountsRouter';
 
-import getPartiessRouter from "./src/routes/getPartiessRouter";
 import donationsRouter from "./src/routes/donationsRouter";
 
 const logger = require('./src/logger');
@@ -50,7 +49,6 @@ app.use("/votingDetailsNeo", votingDetailsNeoRouter);
 
 app.use("/votecounts", voteCountsRouter);  
 
-app.use("/getparties", getPartiessRouter);  
 app.use("/donations", donationsRouter);  
 
 app.use("/insights/mpvotes", mpVotesRouter);  
