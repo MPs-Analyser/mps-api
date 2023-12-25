@@ -18,16 +18,18 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
     // @ts-ignore
     const result = await getDonorsForParty({ partyName });        
 
-    if (result && result.records && Array.isArray(result.records)) {            
+    if (result && result.records && Array.isArray(result.records)) {                  
+      
       // @ts-ignore
-      result.records.forEach(i => {        
-        console.log(i._fields);
-        formattedResult.push({ 
+      result.records.forEach(i => {                
+        const record = { 
           partyName: i._fields[i._fieldLookup.partyName], 
           donar: i._fields[i._fieldLookup.donar], 
           donatedCout: i._fields[i._fieldLookup.donated].low, 
           totalDonationValue: i._fields[i._fieldLookup.totalDonationValue].low ? i._fields[i._fieldLookup.totalDonationValue].low : i._fields[i._fieldLookup.totalDonationValue]
-        });
+        }
+
+        formattedResult.push(record);
       });
 
     }
@@ -62,7 +64,7 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
           partyName: item._fields[0],
           memberCount: memberCount,
           donationCount: item._fields[1].low,
-          totalDonationValue: item._fields[2]
+          totalDonationValue: item._fields[2].low ? item._fields[2].low : item._fields[2]
         });
       });
 

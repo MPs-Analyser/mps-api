@@ -118,13 +118,13 @@ export const getDonorsForParty = async ({ partyName="Any" }) => {
     const session = driver.session();
 
     const cypher = `
-    MATCH (d:Donar)
-    WHERE d.partyName = "${partyName}" OR "${partyName}" = "Any"
+    MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
+    WHERE p.partyName = "${partyName}" OR "${partyName}" = "Any"
        RETURN
-       d.partyName AS partyName,
+       p.partyName AS partyName,
        d.donar as donar,
-       COUNT(d.amount) AS donated,
-       SUM(d.amount) AS totalDonationValue
+       COUNT(r) AS donated,
+       SUM(r.amount) AS totalDonationValue
        ORDER BY totalDonationValue DESC;
     `
 
@@ -147,11 +147,11 @@ export const getDonationSummary = async () => {
     const session = driver.session();
 
     const cypher = `
-    MATCH (d:Donar)
+    MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
     RETURN
-    d.partyName AS partyName,
-    COUNT(d.partyName) AS donationCount,
-    SUM(TOFLOAT(d.amount)) AS totalDonationValue
+    p.partyName AS partyName,
+    COUNT(r) AS donationCount,
+    SUM(r.amount) AS totalDonationValue
     ORDER BY totalDonationValue DESC;
     `
 
