@@ -22,15 +22,6 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
 
     if (result && result.records && Array.isArray(result.records)) {                  
       
-      // d.donar as donar, 
-      // d.accountingUnitName as accountingUnitName, 
-      // d.postcode as postcode,
-      // d.donorStatus as donorStatus, 
-      // r.amount as amount, 
-      // r.donationType, as donationType,
-      // r.receivedDate as receivedDate, 
-      // p.partyName as partyName`;
-
       // @ts-ignore
       result.records.forEach(i => {                
         

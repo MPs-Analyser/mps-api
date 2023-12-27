@@ -116,12 +116,6 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
-    // const cypher = `
-    // MATCH (d:Donar)
-    // WHERE d.donar = "${donarName}"
-    // RETURN d.donar as donar, d.accountingUnitName as accountingUnitName, d.postcode as postcode, d.donorStatus as donorStatus
-    // `
-
     const cypher = `MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
     WHERE d.donar = "${donarName}"
     RETURN 
