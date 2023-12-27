@@ -30,7 +30,7 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
           accountingUnitName: i._fields[i._fieldLookup.accountingUnitName], 
           postcode: i._fields[i._fieldLookup.postcode], 
           donorStatus: i._fields[i._fieldLookup.donorStatus],
-          amount: i._fields[i._fieldLookup.amount].low,
+          amount: i._fields[i._fieldLookup.amount].low ? i._fields[i._fieldLookup.amount].low : i._fields[i._fieldLookup.amount],
           donationType: i._fields[i._fieldLookup.donationType],
           receivedDate: i._fields[i._fieldLookup.receivedDate],
           partyName: i._fields[i._fieldLookup.partyName],          
