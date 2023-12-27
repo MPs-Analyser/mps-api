@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getDonationSummary, getParties, getDonorsForParty } from "../databases/neoManager";
+import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails } from "../databases/neoManager";
 
 const donationsRouter = express.Router();
 
@@ -11,9 +11,45 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   const partyName: string = req?.query?.partyname;
 
   // @ts-ignore
-  const formattedResult = []
+  const donarName: string = req?.query?.donar;
 
-  if (partyName) {
+  // @ts-ignore
+  const formattedResult = [];
+
+  if (donarName) {
+
+    const result = await getDonorDetails({ donarName });
+
+    if (result && result.records && Array.isArray(result.records)) {                  
+      
+      // d.donar as donar, 
+      // d.accountingUnitName as accountingUnitName, 
+      // d.postcode as postcode,
+      // d.donorStatus as donorStatus, 
+      // r.amount as amount, 
+      // r.donationType, as donationType,
+      // r.receivedDate as receivedDate, 
+      // p.partyName as partyName`;
+
+      // @ts-ignore
+      result.records.forEach(i => {                
+        
+        const record = { 
+          donar: i._fields[i._fieldLookup.donar], 
+          accountingUnitName: i._fields[i._fieldLookup.accountingUnitName], 
+          postcode: i._fields[i._fieldLookup.postcode], 
+          donorStatus: i._fields[i._fieldLookup.donorStatus],
+          amount: i._fields[i._fieldLookup.amount].low,
+          donationType: i._fields[i._fieldLookup.donationType],
+          receivedDate: i._fields[i._fieldLookup.receivedDate],
+          partyName: i._fields[i._fieldLookup.partyName],          
+        }
+        formattedResult.push(record);      
+      });      
+    }
+    
+
+  } else if (partyName) {
 
     // @ts-ignore
     const result = await getDonorsForParty({ partyName });        
@@ -31,7 +67,6 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
 
         formattedResult.push(record);
       });
-
     }
 
   } else {
@@ -71,6 +106,7 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
     }
 
   }
+console.log("the end");
 
   // @ts-ignore
   res.json(formattedResult)
