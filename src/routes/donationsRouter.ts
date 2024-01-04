@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails } from "../databases/neoManager";
+import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails, getMultiPartyDonars } from "../databases/neoManager";
 
 const donationsRouter = express.Router();
 
@@ -14,9 +14,33 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   const donarName: string = req?.query?.donar;
 
   // @ts-ignore
+  const multiParty: string = Boolean(req?.query?.multiparty) || Boolean(req?.query?.multiParty);
+
+  console.log("check ", multiParty);
+  
+
+  // @ts-ignore
   const formattedResult = [];
 
-  if (donarName) {
+  if (multiParty) {
+
+        // @ts-ignore
+        const result = await getMultiPartyDonars();        
+
+        if (result && result.records && Array.isArray(result.records)) {                  
+          
+          // @ts-ignore
+          result.records.forEach(i => {                
+            const record = { 
+              donor: i._fields[i._fieldLookup.donor], 
+              numberOfPartiesDonated: i._fields[i._fieldLookup.numberOfPartiesDonated].low, 
+              partyNames: i._fields[i._fieldLookup.partyNames],               
+            }
+    
+            formattedResult.push(record);
+          });
+        }
+  } else if (donarName) {
 
     const result = await getDonorDetails({ donarName });
 

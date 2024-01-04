@@ -127,7 +127,7 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     r.donationType as donationType,
     r.receivedDate as receivedDate, 
     p.partyName as partyName`;
-  
+
     try {
         const result = await runCypher(cypher, session);
         return result;
@@ -136,6 +136,37 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     }
 
 }
+
+export const getMultiPartyDonars = async () => {
+
+    logger.debug(`Getting getMultiPartyDonars`);
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    const cypher = `
+    MATCH (d:Donar)-[r:DONATED_TO]->(p:Party)
+    WITH d, COLLECT(DISTINCT p.partyName) AS uniquePartyNames
+    WHERE SIZE(uniquePartyNames) > 1
+    RETURN
+      d.donar AS donor,
+      SIZE(uniquePartyNames) AS numberOfPartiesDonated,
+      uniquePartyNames AS partyNames
+    ORDER BY numberOfPartiesDonated DESC;
+    `
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+
 
 export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
