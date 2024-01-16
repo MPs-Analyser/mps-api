@@ -117,7 +117,7 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     const session = driver.session();
 
     const cypher = `MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
-    WHERE d.donar = "${donarName}"
+    WHERE d.donar =~ '(?i).*${donarName}.*'
     RETURN 
     d.donar as donar, 
     d.accountingUnitName as accountingUnitName, 

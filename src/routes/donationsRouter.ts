@@ -16,9 +16,8 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const multiParty: string = Boolean(req?.query?.multiparty) || Boolean(req?.query?.multiParty);
 
-  console.log("check ", multiParty);
+  console.log("check ", donarName);
   
-
   // @ts-ignore
   const formattedResult = [];
 
