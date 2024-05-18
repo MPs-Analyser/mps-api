@@ -109,7 +109,7 @@ export const getParties = async () => {
 
 export const getDonorDetails = async ({ donarName = "" }) => {
 
-    logger.debug(`Getting donations for donar ${donarName}`);
+    logger.debug(`Getting donations for donar name ${donarName}`);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
