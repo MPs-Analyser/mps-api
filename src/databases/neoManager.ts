@@ -116,7 +116,7 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
     const session = driver.session();
 
-    const cypher = `MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
+    const cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
     WHERE d.donar =~ '(?i).*${donarName}.*'
     RETURN 
     d.donar as donar, 
@@ -147,7 +147,7 @@ export const getMultiPartyDonars = async () => {
     const session = driver.session();
 
     const cypher = `
-    MATCH (d:Donar)-[r:DONATED_TO]->(p:Party)
+    MATCH (d)-[r:DONATED_TO]->(p:Party)
     WITH d, COLLECT(DISTINCT p.partyName) AS uniquePartyNames
     WHERE SIZE(uniquePartyNames) > 1
     RETURN
@@ -178,7 +178,7 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     const session = driver.session();
 
     const cypher = `
-    MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
+    MATCH (d)-[r:DONATED_TO]-(p:Party)
     WHERE p.partyName = "${partyName}" OR "${partyName}" = "Any"
        RETURN
        p.partyName AS partyName,
@@ -207,7 +207,7 @@ export const getDonationSummary = async () => {
     const session = driver.session();
 
     const cypher = `
-    MATCH (d:Donar)-[r:DONATED_TO]-(p:Party)
+    MATCH (d)-[r:DONATED_TO]-(p:Party)
     RETURN
     p.partyName AS partyName,
     COUNT(r) AS donationCount,
