@@ -237,12 +237,12 @@ export const getContractsforOrg = async ({ orgName="" }) => {
     MATCH (org:Organisation)-[:AWARDED]-(con:Contract)-[:TENDERED]-(party:Party)
     WHERE toLower(org.Name) CONTAINS toLower("${orgName}")
     RETURN 
-        con.Title AS Contract_Title,
-        con.AwardedValue AS Awarded_Value,
-        con.AwardedDate AS Awarded_Date,
-        con.Description AS Contract_Description,
-        con.Link AS Contract_Link,
         party.partyName AS Awarded_By
+        con.AwardedDate AS Awarded_Date,
+        con.Title AS Contract_Title,
+        con.AwardedValue AS Awarded_Value,        
+        con.Description AS Contract_Description,
+        con.Link AS Contract_Link,        
     `
 
     try {
