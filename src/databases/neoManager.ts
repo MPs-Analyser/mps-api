@@ -197,6 +197,33 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
 }
 
+export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
+
+    logger.debug('getContractsAwardedByCount');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = neo4j.driver(CONNECTION_STRING, neo4j.auth.basic(process.env.NEO4J_USER || '', process.env.NEO4J_PASSWORD || ''));
+    const session = driver.session();
+
+    const cypher = `
+    MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+    WITH org, COUNT(c) AS contractCount
+    WHERE contractCount > ${awardedCount}
+    AND org.Name <> ""
+    RETURN org.Name, contractCount
+    ORDER BY contractCount
+    `
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
 export const getDonationSummary = async () => {
 
     logger.debug('Getting donation summary');
