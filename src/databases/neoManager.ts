@@ -284,9 +284,11 @@ export const getDonationSummary = async () => {
 
 }
 
-export const searchDivisions = async ({ category = "Any", name = "Any" }) => {
+export const searchDivisions = async ({ category = "Any", name = "Any", year = "Any" }) => {
 
-    logger.debug('Searching MPs');
+    logger.debug('Searching Divisions');
+
+    const formattedYear:number = year === "Any" ? 0 : Number(year);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
@@ -298,6 +300,7 @@ export const searchDivisions = async ({ category = "Any", name = "Any" }) => {
         MATCH (n:Division) 
         WHERE (n.Category = "${category}" OR "${category}" = "Any")
         AND (n.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
+        AND (datetime(n.Date).year = ${formattedYear} OR ${formattedYear} = 0)    
         RETURN n.Category as category, n.Title as title, n.DivisionId as id, n.Date as date, n.AyeCount as ayeCount, n.NoCount as noCount`,
             session);
         return result;

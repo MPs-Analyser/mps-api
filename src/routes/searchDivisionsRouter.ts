@@ -5,7 +5,7 @@ const searchDivisionsRouter = express.Router();
 
 searchDivisionsRouter.get('/', async (req: Request, res: Response) => {
 
-  console.log('Search MPs ', req.query);
+  console.log('Search Divisions ', req.query);
 
   // @ts-ignore
   const category: string = req?.query?.category || 'Any';
@@ -14,7 +14,10 @@ searchDivisionsRouter.get('/', async (req: Request, res: Response) => {
   const name: string = req?.query?.name || 'Any';
 
   // @ts-ignore
-  const result = await searchDivisions({ category, name });
+  const year: string = req?.query?.year || 'Any';
+
+  // @ts-ignore
+  const result = await searchDivisions({ category, name, year });
 
   // @ts-ignore
   const formattedResult = []
