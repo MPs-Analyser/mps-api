@@ -18,9 +18,6 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
     result = await getContractsAwardedByCount({ awardedCount });
   }
 
-  console.log(result);
-  
-  
   // @ts-ignore
   if (result && result.records) {    
     // @ts-ignore
