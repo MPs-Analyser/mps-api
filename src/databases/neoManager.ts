@@ -482,24 +482,31 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
     const session = driver.session();
 
     const neoIdCypher = `MATCH (n:Mp {id: ${id}}) RETURN ID(n)`;
-    let neoId;
+    let neoId, result;
     try {
 
-        const neoIdResult = await runCypher(neoIdCypher, session);
+        const neoIdResult = await runCypher(neoIdCypher, session);        
         logger.info("check me out >>> " + JSON.stringify(neoIdResult.records));
-        neoId = neoIdResult.records[0]._fields[0].low;
-        logger.info("reult is " + neoId)
 
-        let cypher;
-        if (type === "excludeParty") {
-            cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "<>");
-        } else if (type === "includeParty") {
-            cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "=");
+        if (!neoIdResult.records.length) {
+            result = []
         } else {
-            cypher = cyphers.votingSimilarity("similarityGraph", neoId, orderBy, limit);
-        }
 
-        const result = await runCypher(cypher, session);
+            neoId = neoIdResult.records[0]._fields[0].low;
+            logger.info("reult is " + neoId)
+    
+            let cypher;
+            if (type === "excludeParty") {
+                cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "<>");
+            } else if (type === "includeParty") {
+                cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "=");
+            } else {
+                cypher = cyphers.votingSimilarity("similarityGraph", neoId, orderBy, limit);
+            }
+    
+            result = await runCypher(cypher, session);
+        }
+       
         return result;
     } finally {
         session.close();
