@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getContractsAwardedByCount, getContractsforOrg } from "../databases/neoManager";
+import { getContractsAwardedByCount, getContractsforOrg, queryContracts } from "../databases/neoManager";
 
 const contractsRouter = express.Router();
 
@@ -11,12 +11,15 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   let result;
 
-  if (orgName && orgName?.length) {
-    // @ts-ignore
-    result = await getContractsforOrg({ orgName });
-  } else if (awardedCount) {
-    result = await getContractsAwardedByCount({ awardedCount });
-  }
+  // @ts-ignore
+  result = await queryContracts({ awardedCount, orgName });
+
+  // if (orgName && orgName?.length) {
+  //   // @ts-ignore
+  //   result = await getContractsforOrg({ orgName });
+  // } else if (awardedCount) {
+  //   result = await getContractsAwardedByCount({ awardedCount });
+  // }
 
   // @ts-ignore
   if (result && result.records) {    

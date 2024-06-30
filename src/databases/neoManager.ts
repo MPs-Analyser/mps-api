@@ -199,6 +199,36 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
 }
 
+
+export const queryContracts = async ({ awardedCount = 0, orgName="Any"  }) => {
+
+    logger.debug('getContractsAwardedByCount bobby');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+    const cypher = `
+    MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+    WITH org, COUNT(c) AS contractCount
+    WHERE contractCount > ${awardedCount}    
+    AND org.Name <> ""
+    AND toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any"
+    RETURN org.Name, contractCount
+    ORDER BY contractCount
+    `
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+
 export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
     logger.debug('getContractsAwardedByCount');
