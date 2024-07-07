@@ -33,7 +33,6 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
 
     // @ts-ignore
     result.records.forEach(i => {
-      console.log("mm ", i._fields);
       
       // @ts-ignore          
       formattedResult.push(
