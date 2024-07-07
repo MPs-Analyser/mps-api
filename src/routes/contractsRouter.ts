@@ -11,18 +11,20 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   let result;
 
-  // @ts-ignore
-  result = await queryContracts({ awardedCount, orgName });
 
-  // if (orgName && orgName?.length) {
-  //   // @ts-ignore
-  //   result = await getContractsforOrg({ orgName });
-  // } else if (awardedCount) {
-  //   result = await getContractsAwardedByCount({ awardedCount });
-  // }
+
+  if (orgName && orgName?.length && awardedCount) {
+    // @ts-ignore
+    result = await queryContracts({ awardedCount, orgName });
+  } else if (orgName && orgName?.length) {
+    // @ts-ignore
+    result = await getContractsforOrg({ orgName });
+  } else if (awardedCount) {
+    result = await getContractsAwardedByCount({ awardedCount });
+  }
 
   // @ts-ignore
-  if (result && result.records) {    
+  if (result && result.records) {
     // @ts-ignore
     res.json(result.records);
   } else {

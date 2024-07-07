@@ -56,42 +56,48 @@ export const getMpNames = async () => {
     }
 }
 
+
 export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0" }) => {
-
-    logger.debug('Searching MPs');
-
+    logger.debug("Searching MPs");
+  
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-
     driver = setDriver();
-
     const session = driver.session();
-
+  
     const cypher = `
-    MATCH (s:Mp)-[r:VOTED_FOR]-(d) 
-    WHERE (s.partyName = "${party}" OR "${party}" = "Any")
-    AND (s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-    AND (s.gender = "${sex}" OR "${sex}" = "Any")
-    AND (datetime(s.membershipStartDate).year = ${year} OR ${year} = 0)    
-    WITH s, d, r    
-    RETURN 
-    s.nameDisplayAs,
-    s.gender, 
-    s.membershipStartDate as startDate, 
-    s.partyName as party,
-    s.id,
-    COUNT(d) as totalVotes,
-    COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
-    COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
-    `;
-
+      MATCH (s:Mp)
+      WHERE (s.partyName = "${party}" OR "${party}" = "Any")
+      AND (s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
+      AND (s.gender = "${sex}" OR "${sex}" = "Any")
+      AND (datetime(s.membershipStartDate).year = ${year} OR ${year} = 0)             
+      OPTIONAL MATCH (s)-[r:VOTED_FOR]->(d)  
+      WITH s, 
+           COUNT(d) as totalVotes,
+           COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
+           COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
+  
+      // Filter based on votes if specified
+      WHERE (totalVotes ${votes} OR "${votes}" = ">0") 
+  
+      RETURN 
+        s.nameDisplayAs,
+        s.gender, 
+        s.membershipStartDate as startDate, 
+        s.partyName as party,
+        s.id,
+        totalVotes,
+        ayeVotes,
+        nayVotes
+      `;
+  
     try {
-        const result = await runCypher(cypher, session);
-        return result;
+      const result = await runCypher(cypher, session);
+      return result;
     } finally {
-        session.close();
+      session.close();
     }
-}
-
+  };
+  
 export const getParties = async () => {
 
     logger.debug('Getting parties');
