@@ -20,8 +20,10 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
 
   const votes = req?.query?.votes || ">0";
 
+  const status = req?.query?.status || "All";
+
   // @ts-ignore
-  const result = await searchMps({ party, name, sex, year, votes });
+  const result = await searchMps({ party, name, sex, year, votes, status });
 
   // @ts-ignore
   const formattedResult = []

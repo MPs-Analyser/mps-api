@@ -57,16 +57,19 @@ export const getMpNames = async () => {
 }
 
 
-export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0" }) => {
+export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0", status="All" }) => {
     logger.debug("Searching MPs");
   
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
+
+    const isActive = status === "Active" ? true : false;
   
     const cypher = `
       MATCH (s:Mp)
       WHERE (s.partyName = "${party}" OR "${party}" = "Any")
+      AND (s.isActive = ${isActive} OR "${status}" = "All")
       AND (s.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
       AND (s.gender = "${sex}" OR "${sex}" = "Any")
       AND (datetime(s.membershipStartDate).year = ${year} OR ${year} = 0)             
