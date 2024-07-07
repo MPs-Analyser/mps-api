@@ -87,10 +87,11 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
         s.gender, 
         s.membershipStartDate as startDate, 
         s.partyName as party,
-        s.id,
+        s.id,        
         totalVotes,
         ayeVotes,
-        nayVotes
+        nayVotes,
+        s.isActive
       `;
   
     try {

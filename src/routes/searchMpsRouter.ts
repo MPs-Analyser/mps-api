@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { searchMps } from "../databases/neoManager";
+import { log } from 'console';
 
 const searchMpsRouter = express.Router();
 
@@ -32,6 +33,8 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
 
     // @ts-ignore
     result.records.forEach(i => {
+      console.log("mm ", i._fields);
+      
       // @ts-ignore          
       formattedResult.push(
         {
@@ -42,7 +45,8 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
           id: i._fields[4].low,
           totalVotes: i._fields[5].low,
           ayeVotes: i._fields[6].low,
-          noVotes: i._fields[7].low
+          noVotes: i._fields[7].low,
+          isActive: i._fields[8]
         }
       )
     })
