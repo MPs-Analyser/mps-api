@@ -15,8 +15,6 @@ import votingDetailsNeoRouter from './src/routes/votingDetailsNeoRouter';
 import searchMpsRouter from './src/routes/searchMpsRouter';
 import searchDivisionsRouter from './src/routes/searchDivisionsRouter';
 
-import mpDetailsRouter from './src/routes/mpDetailsRouter';
-
 import mpVotesRouter from './src/routes/mpVotesRouter';
 import divisionVotesRouter from './src/routes/divisionVotesRouter';
 
@@ -40,8 +38,6 @@ app.use("/mpnames", mpNamesRouter);
 app.use("/divisionnames", divisionNamesRouter);  
 
 app.use("/votingSimilarityNeo", mostSimilarVotingRecordNeoRouter);  
-
-app.use("/mpDetails", mpDetailsRouter);  
 
 app.use("/searchMps", searchMpsRouter);  
 app.use("/searchDivisions", searchDivisionsRouter);  

@@ -1,26 +1,19 @@
-import { log } from 'console';
 import express, { Request, Response } from 'express';
-import { appStatus } from '../models/appStatus'
-// import { getDivisionNames } from "../databases/neoManager";
-import { getDivisionNames } from "../databases/mongoManager";
+import { getDivisionNames } from "../databases/neoManager";
 
 const divisionNamesRouter = express.Router();
 
 divisionNamesRouter.get('/', async (req: Request, res: Response) => {
 
-  console.log('Getting division names');
-
   const divisions = await getDivisionNames();
-  
+
+  const formattedResult: Array<any> = []
+
   // @ts-ignore
-  const formattedResult = []
-  
-  // @ts-ignore
-  divisions.forEach(i => {    
-    formattedResult.push({ type: 'division', id: i.DivisionId, name: i.Title});
+  divisions.records.forEach(i => {
+    formattedResult.push({ type: 'division', id: i._fields[1].low, name: i._fields[0] });
   });
 
-    // @ts-ignore
   res.json(formattedResult);
 });
 
