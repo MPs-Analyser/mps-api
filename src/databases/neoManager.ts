@@ -57,15 +57,15 @@ export const getMpNames = async () => {
 }
 
 
-export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0", status="All" }) => {
+export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0", status = "All" }) => {
     logger.debug("Searching MPs");
-  
+
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
     const isActive = status === "Active" ? true : false;
-  
+
     const cypher = `
       MATCH (s:Mp)
       WHERE (s.partyName = "${party}" OR "${party}" = "Any")
@@ -93,15 +93,15 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
         nayVotes,
         s.isActive
       `;
-  
+
     try {
-      const result = await runCypher(cypher, session);
-      return result;
+        const result = await runCypher(cypher, session);
+        return result;
     } finally {
-      session.close();
+        session.close();
     }
-  };
-  
+};
+
 export const getParties = async () => {
 
     logger.debug('Getting parties');
@@ -209,10 +209,21 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
 }
 
+const runCypherWithParams = async (cypher: string, params: object, session: any) => {
+    logger.trace(cypher);
+    try {
+        const result = await session.run(cypher, params);
+        return result;
+    } catch (error) {
+        logger.error("ERROR RUNNING CYPHER: " + error);
+    }
+}
 
-export const queryContracts = async ({ awardedCount = 0, orgName="Any"  }) => {
 
-    logger.debug('getContractsAwardedByCount bobby');
+
+export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party" }) => {
+
+    logger.debug('queryContracts');
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
@@ -221,16 +232,23 @@ export const queryContracts = async ({ awardedCount = 0, orgName="Any"  }) => {
 
     const cypher = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+    WHERE party.partyName = $partyName OR $partyName = "Any Party"
     WITH org, COUNT(c) AS contractCount
-    WHERE contractCount > ${awardedCount}    
+    WHERE contractCount > $awardedCount  
     AND org.Name <> ""
-    AND toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any"
+    AND (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
     RETURN org.Name, contractCount
     ORDER BY contractCount
-    `
+    `;
+
+    const params = {
+        awardedCount,
+        orgName,
+        partyName: awardedBy
+    };
 
     try {
-        const result = await runCypher(cypher, session);
+        const result = await runCypherWithParams(cypher, params, session);
         return result;
     } finally {
         session.close();
@@ -266,7 +284,7 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
 }
 
-export const getContractsforOrg = async ({ orgName="" }) => {
+export const getContractsforOrg = async ({ orgName = "" }) => {
 
     logger.debug('getContractsAwardedByCount');
 
@@ -328,7 +346,7 @@ export const searchDivisions = async ({ category = "Any", name = "Any", year = "
 
     logger.debug('Searching Divisions');
 
-    const formattedYear:number = year === "Any" ? 0 : Number(year);
+    const formattedYear: number = year === "Any" ? 0 : Number(year);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
@@ -525,7 +543,7 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
     let neoId, result;
     try {
 
-        const neoIdResult = await runCypher(neoIdCypher, session);        
+        const neoIdResult = await runCypher(neoIdCypher, session);
         logger.info("check me out >>> " + JSON.stringify(neoIdResult.records));
 
         if (!neoIdResult.records.length) {
@@ -534,7 +552,7 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
 
             neoId = neoIdResult.records[0]._fields[0].low;
             logger.info("reult is " + neoId)
-    
+
             let cypher;
             if (type === "excludeParty") {
                 cypher = cyphers.votingSimilarityParty("similarityGraph", neoId, partyName, orderBy, limit, "<>");
@@ -543,10 +561,10 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
             } else {
                 cypher = cyphers.votingSimilarity("similarityGraph", neoId, orderBy, limit);
             }
-    
+
             result = await runCypher(cypher, session);
         }
-       
+
         return result;
     } finally {
         session.close();

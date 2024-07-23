@@ -9,19 +9,12 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   const orgName = req?.query?.orgName;
 
+  const awardedBy = req?.query?.awardedBy;
+
   let result;
 
-
-
-  if (orgName && orgName?.length && awardedCount) {
-    // @ts-ignore
-    result = await queryContracts({ awardedCount, orgName });
-  } else if (orgName && orgName?.length) {
-    // @ts-ignore
-    result = await getContractsforOrg({ orgName });
-  } else if (awardedCount) {
-    result = await getContractsAwardedByCount({ awardedCount });
-  }
+  // @ts-ignore
+  result = await queryContracts({ awardedCount, orgName, awardedBy });
 
   // @ts-ignore
   if (result && result.records) {
