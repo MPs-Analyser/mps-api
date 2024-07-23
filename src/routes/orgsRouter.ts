@@ -8,7 +8,7 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   console.log('Get orgs ', req.query);
 
   // @ts-ignore
-  const name: string = req?.query?.name;
+  const name: string = req?.query?.name || "any";
 
   // @ts-ignore
   const awardedBy: string = req?.query?.awardedBy || "Any Party";
@@ -16,7 +16,10 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const donatedTo: string = req?.query?.donatedTo || "Any Party";;
 
-  const result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo });
+  const limit = req?.query?.limit;
+
+  //@ts-ignore
+  const result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit });
 
   // @ts-ignore
   res.json(result.records);

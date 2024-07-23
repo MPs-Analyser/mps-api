@@ -130,7 +130,7 @@ interface QueryParams {
 //orgs that donated to party that awarded them a contract
 
 
-export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party" }) => {
+export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit=10 }) => {
 
     logger.debug(`Query orgs and individuals for ${name} ${awardedBy} ${donatedTo}`);
 
@@ -140,11 +140,14 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     const session = driver.session();
 
     let cypher;
-
+    
+    //TODO need to add more params such as date range and also find out to get contract awarded to is different than party donated to
     if (awardedBy !== "Any Party") {
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE org.name  =~ '(?i).*${name}.*' 
-        RETURN org.Name AS organisation, party.partyName AS partyDnatedTo, c.Title AS contractRecieved LIMIT 5`
+        WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")        
+        AND (party.partyName = "${awardedBy}" or "${awardedBy}" = "Any Party")    
+        RETURN org.Name AS name, party.partyName AS dontatedTo, party.partyName AS awaredBy, c.Title, c.AwardedDate AS date 
+        LIMIT ${limit}`
 
     } else {
         cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
@@ -158,8 +161,8 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         r.amount as amount, 
         r.donationType as donationType,
         r.receivedDate as receivedDate, 
-        p.partyName as donatedTo`;
-
+        p.partyName as donatedTo
+        LIMIT ${limit}`
     }
 
     try {
@@ -275,7 +278,7 @@ const runCypherWithParams = async (cypher: string, params: object, session: any)
 
 
 
-export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party" }) => {
+export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit=10 }) => {
 
     logger.debug('queryContracts');
 
@@ -293,7 +296,7 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
     AND (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
     RETURN org.Name, contractCount
     ORDER BY contractCount
-    `;
+    LIMIT ${limit}`;
 
     const params = {
         awardedCount,

@@ -11,10 +11,12 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   const awardedBy = req?.query?.awardedBy;
 
+  const limit = req?.query?.limit;
+
   let result;
 
   // @ts-ignore
-  result = await queryContracts({ awardedCount, orgName, awardedBy });
+  result = await queryContracts({ awardedCount, orgName, awardedBy, limit });
 
   // @ts-ignore
   if (result && result.records) {
