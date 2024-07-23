@@ -22,6 +22,7 @@ import voteCountsRouter from './src/routes/voteCountsRouter';
 
 import donationsRouter from "./src/routes/donationsRouter";
 import contractsRouter from "./src/routes/contractsRouter";
+import orgsRouter from "./src/routes/orgsRouter";
 
 const logger = require('./src/logger');
 
@@ -47,6 +48,7 @@ app.use("/votingDetailsNeo", votingDetailsNeoRouter);
 app.use("/votecounts", voteCountsRouter);  
 
 app.use("/donations", donationsRouter);  
+app.use("/orgs", orgsRouter);  
 
 app.use("/insights/mpvotes", mpVotesRouter);  
 app.use("/insights/divisionvotes", divisionVotesRouter);  

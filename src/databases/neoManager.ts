@@ -119,6 +119,60 @@ export const getParties = async () => {
     }
 }
 
+// Define an interface for the function parameters
+interface QueryParams {
+    name?: string;
+    awardedBy?: string; // If this is relevant to the query, update the cypher accordingly
+    donatedTo?: string;
+}
+
+
+//orgs that donated to party that awarded them a contract
+
+
+export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party" }) => {
+
+    logger.debug(`Query orgs and individuals for ${name} ${awardedBy} ${donatedTo}`);
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+    let cypher;
+
+    if (awardedBy !== "Any Party") {
+        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+        WHERE org.name  =~ '(?i).*${name}.*' 
+        RETURN org.Name AS organisation, party.partyName AS partyDnatedTo, c.Title AS contractRecieved LIMIT 5`
+
+    } else {
+        cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
+        WHERE d.donar =~ '(?i).*${name}.*'
+        AND (p.partyName = "${donatedTo}" or "${donatedTo}" = "Any Party")
+        RETURN 
+        d.donar as donar, 
+        d.accountingUnitName as accountingUnitName, 
+        d.postcode as postcode,
+        d.donorStatus as donorStatus, 
+        r.amount as amount, 
+        r.donationType as donationType,
+        r.receivedDate as receivedDate, 
+        p.partyName as donatedTo`;
+
+    }
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+
+
 export const getDonorDetails = async ({ donarName = "" }) => {
 
     logger.debug(`Getting donations for donar name ${donarName}`);
