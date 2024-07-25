@@ -130,7 +130,7 @@ interface QueryParams {
 //orgs that donated to party that awarded them a contract
 
 
-export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit=10 }) => {
+export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
 
     logger.debug(`Query orgs and individuals for ${name} ${awardedBy} ${donatedTo}`);
 
@@ -140,28 +140,47 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     const session = driver.session();
 
     let cypher;
-    
+
     //TODO need to add more params such as date range and also find out to get contract awarded to is different than party donated to
     if (awardedBy !== "Any Party") {
-        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")        
-        AND (party.partyName = "${awardedBy}" or "${awardedBy}" = "Any Party")    
-        RETURN org.Name AS name, party.partyName AS dontatedTo, party.partyName AS awaredBy, c.Title, c.AwardedDate AS date 
-        LIMIT ${limit}`
+        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+        // WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")        
+        // AND (party.partyName = "${awardedBy}" or "${awardedBy}" = "Any Party")    
+        // RETURN org.Name AS name, party.partyName AS dontatedTo, party.partyName AS awaredBy, c.Title, c.AwardedDate AS date 
+        // LIMIT ${limit}`
+
+        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
+        // (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+        // WHERE (org.Name =~ '(?i).*${name}.*')
+        // AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
+        // AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
+        // RETURN org.Name AS name, awardedContractBy.partyName AS donatedTo, awardedContractBy.partyName AS awardedContractBy, c.Title, c.AwardedDate AS date
+        // LIMIT ${limit}`
+
+        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
+       (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+       WHERE (org.Name =~ '(?i).*${name}.*')
+       AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
+       AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
+       WITH org, awardedContractBy, COLLECT(DISTINCT c.Title) AS uniqueTitles, c.AwardedDate AS awardedDate
+       RETURN org.Name AS name, 
+       awardedContractBy.partyName AS donatedTo, 
+       awardedContractBy.partyName AS awardedContractBy, 
+       uniqueTitles,  
+       awardedDate
+       LIMIT ${limit}`
+
 
     } else {
-        cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
-        WHERE d.donar =~ '(?i).*${name}.*'
-        AND (p.partyName = "${donatedTo}" or "${donatedTo}" = "Any Party")
-        RETURN 
-        d.donar as donar, 
-        d.accountingUnitName as accountingUnitName, 
-        d.postcode as postcode,
-        d.donorStatus as donorStatus, 
-        r.amount as amount, 
-        r.donationType as donationType,
-        r.receivedDate as receivedDate, 
-        p.partyName as donatedTo
+
+        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+        WHERE org.Name =~ '(?i).*${name}.*'
+        AND (party.partyName = "${donatedTo}" or "${donatedTo}" = "Any Party")
+        WITH org, party, collect(c) AS contracts
+        UNWIND contracts AS c
+        WITH org, party, c ORDER BY c.AwardedDate DESC
+        WITH org.Name AS name, party.partyName AS donatedTo, party.partyName AS awardedBy, c.Title AS title, collect(c.AwardedDate) AS awardedDates
+        RETURN name, donatedTo, awardedBy, title, head(awardedDates) AS date
         LIMIT ${limit}`
     }
 
@@ -278,7 +297,7 @@ const runCypherWithParams = async (cypher: string, params: object, session: any)
 
 
 
-export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit=10 }) => {
+export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 10 }) => {
 
     logger.debug('queryContracts');
 
@@ -289,7 +308,8 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
 
     const cypher = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-    WHERE party.partyName = $partyName OR $partyName = "Any Party"
+    WHERE toLower(org.Name) CONTAINS toLower("${orgName}")
+    AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
     WITH org, COUNT(c) AS contractCount
     WHERE contractCount > $awardedCount  
     AND org.Name <> ""
@@ -341,7 +361,7 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
 }
 
-export const getContractsforOrg = async ({ orgName = "" }) => {
+export const getContractsforOrg = async ({ orgName = "", limit=1000 }) => {
 
     logger.debug('getContractsAwardedByCount');
 
@@ -360,6 +380,7 @@ export const getContractsforOrg = async ({ orgName = "" }) => {
         con.AwardedValue AS Awarded_Value,        
         con.Description AS Contract_Description,
         con.Link AS Contract_Link       
+        LIMIT ${limit}
     `
 
     try {
