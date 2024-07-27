@@ -159,12 +159,12 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
        (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-       WHERE (org.Name =~ '(?i).*${name}.*')
+       WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")
        AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
        AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
-       WITH org, awardedContractBy, COLLECT(DISTINCT c.Title) AS uniqueTitles, c.AwardedDate AS awardedDate
+       WITH org, awardedContractBy, donatedTo, COLLECT(DISTINCT c.Title) AS uniqueTitles, c.AwardedDate AS awardedDate
        RETURN org.Name AS name, 
-       awardedContractBy.partyName AS donatedTo, 
+       donatedTo.partyName AS donatedTo, 
        awardedContractBy.partyName AS awardedContractBy, 
        uniqueTitles,  
        awardedDate
@@ -174,7 +174,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     } else {
 
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE org.Name =~ '(?i).*${name}.*'
+        WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")
         AND (party.partyName = "${donatedTo}" or "${donatedTo}" = "Any Party")
         WITH org, party, collect(c) AS contracts
         UNWIND contracts AS c
