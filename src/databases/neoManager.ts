@@ -297,7 +297,7 @@ const runCypherWithParams = async (cypher: string, params: object, session: any)
 
 
 
-export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 10 }) => {
+export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 1000 }) => {
 
     logger.debug('queryContracts');
 
@@ -308,24 +308,24 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
 
     const cypher = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-    WHERE toLower(org.Name) CONTAINS toLower("${orgName}")
+    WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
     AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
     WITH org, COUNT(c) AS contractCount
-    WHERE contractCount > $awardedCount  
+    WHERE contractCount > ${awardedCount}  
     AND org.Name <> ""
-    AND (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
+    AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
     RETURN org.Name, contractCount
     ORDER BY contractCount
     LIMIT ${limit}`;
 
-    const params = {
-        awardedCount,
-        orgName,
-        partyName: awardedBy
-    };
+    // const params = {
+    //     awardedCount,
+    //     orgName,
+    //     partyName: awardedBy
+    // };
 
     try {
-        const result = await runCypherWithParams(cypher, params, session);
+        const result = await runCypher(cypher, session);
         return result;
     } finally {
         session.close();

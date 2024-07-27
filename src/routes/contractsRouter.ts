@@ -5,20 +5,20 @@ const contractsRouter = express.Router();
 
 contractsRouter.get('/', async (req: Request, res: Response) => {
 
-  const awardedCount: number = Number(req?.query?.awardedCount);
+  const awardedCount: number = Number(req?.query?.awardedCount) || 0;
 
-  const orgName = req?.query?.orgName;
+  const orgName = req?.query?.orgName || "Any";
 
-  const awardedBy = req?.query?.awardedBy;
+  const awardedBy = req?.query?.awardedBy || "Any Party";
 
-  const limit = req?.query?.limit;
+  const limit:number = Number(req?.query?.limit) || 1000;
 
   let result;
 
+  
   if (orgName && !awardedBy && !awardedCount) {
     // @ts-ignore
     result = await getContractsforOrg({ orgName, limit });
-
   } else {
     // @ts-ignore
     result = await queryContracts({ awardedCount, orgName, awardedBy, limit });
