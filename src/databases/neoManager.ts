@@ -143,19 +143,6 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 
     //TODO need to add more params such as date range and also find out to get contract awarded to is different than party donated to
     if (awardedBy !== "Any Party") {
-        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        // WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")        
-        // AND (party.partyName = "${awardedBy}" or "${awardedBy}" = "Any Party")    
-        // RETURN org.Name AS name, party.partyName AS dontatedTo, party.partyName AS awaredBy, c.Title, c.AwardedDate AS date 
-        // LIMIT ${limit}`
-
-        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
-        // (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        // WHERE (org.Name =~ '(?i).*${name}.*')
-        // AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
-        // AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
-        // RETURN org.Name AS name, awardedContractBy.partyName AS donatedTo, awardedContractBy.partyName AS awardedContractBy, c.Title, c.AwardedDate AS date
-        // LIMIT ${limit}`
 
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
        (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
@@ -297,7 +284,7 @@ const runCypherWithParams = async (cypher: string, params: object, session: any)
 
 
 
-export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 1000 }) => {
+export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 1000, groupByContractCount = false }) => {
 
     logger.debug('queryContracts');
 
@@ -305,18 +292,34 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
 
     driver = setDriver();
     const session = driver.session();
+    let cypher;
 
-    const cypher = `
-    MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-    WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-    AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
-    WITH org, COUNT(c) AS contractCount
-    WHERE contractCount > ${awardedCount}  
-    AND org.Name <> ""
-    AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-    RETURN org.Name, contractCount
-    ORDER BY contractCount
-    LIMIT ${limit}`;
+    if (groupByContractCount) {
+        cypher = `
+        MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+        WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
+        AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
+        WITH org, COUNT(c) AS contractCount
+        WHERE contractCount > ${awardedCount}  
+        AND org.Name <> ""
+        AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
+        RETURN org.Name, contractCount
+        ORDER BY contractCount
+        LIMIT ${limit}`;
+    } else {
+
+        cypher = `
+        MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+        WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
+        AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"        
+        AND org.Name <> ""
+        AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
+        RETURN org.Name, c.Title, c.AwardedValue AS value
+        ORDER BY c.Name
+        LIMIT ${limit}`;
+    }
+
+
 
     // const params = {
     //     awardedCount,
@@ -361,7 +364,7 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
 }
 
-export const getContractsforOrg = async ({ orgName = "", limit=1000 }) => {
+export const getContractsforOrg = async ({ orgName = "", limit = 1000 }) => {
 
     logger.debug('getContractsAwardedByCount');
 
