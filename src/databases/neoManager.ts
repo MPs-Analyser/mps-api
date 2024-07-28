@@ -172,7 +172,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         WITH org, COUNT(c) AS contractCount                
         WHERE (toLower(org.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
         RETURN org.Name, contractCount
-        ORDER BY contractCount
+        ORDER BY contractCount DESC
         LIMIT ${limit}`;
 
     } else if (awardedBy === "Any Party" && donatedTo !== "Any Party") {
@@ -185,11 +185,11 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         AND (toLower(d.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
         AND d.Name <> ""
            RETURN
-           p.partyName AS partyName,
+           p.partyName AS \`Donated To\`,
            d.Name as name,
-           COUNT(r) AS donated,
-           SUM(r.amount) AS totalDonationValue
-           ORDER BY totalDonationValue DESC;
+           COUNT(r) AS \`Donated Count\`,
+           SUM(r.amount) AS \`Total Value\`
+           ORDER BY SUM(r.amount) DESC;
         `
 
     } else {
@@ -357,8 +357,6 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
         ORDER BY c.Name
         LIMIT ${limit}`;
     }
-
-
 
     // const params = {
     //     awardedCount,
