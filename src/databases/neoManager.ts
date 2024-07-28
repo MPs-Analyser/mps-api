@@ -142,7 +142,6 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     driver = setDriver();
     const session = driver.session();
 
-
     const formattedName = escapeRegexSpecialChars(name);
 
 
@@ -156,7 +155,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 
         cypher = `MATCH (org:Organisation)
         WHERE (org.Name =~ '(?i).*${formattedName}.*' OR "${formattedName}" = "any")
-        RETURN org.Name, org.donorStatus as orgType, org.accountingUnitName AS accUnit, org.postcode
+        RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
         LIMIT ${limit}`;
 
 
@@ -773,7 +772,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
+            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)
@@ -783,7 +782,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
+            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
             LIMIT ${limit}`;
         }
     } else {
@@ -795,7 +794,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
+            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
             LIMIT ${limit}`;
         } else {
             cypher = `MATCH (mp:Mp)-[]-(d:Division)        
@@ -804,7 +803,7 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
             AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH mp, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs, mp.partyName, voteCount, mp.id
+            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
             LIMIT ${limit}`;
         }
     }
@@ -844,9 +843,9 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
             AND d.Date < datetime(${toDateValue}) 
             AND (d.Category= "${category}" OR "${category}"="Any")
             AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH d, COUNT(*) AS edgeCount
-            ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount, d.DivisionId
+            WITH d, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN d.Title, voteCount, d.DivisionId
             LIMIT ${limit}`;
 
     } else {
@@ -856,9 +855,9 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
             AND (d.Category= "${category}" OR "${category}"="Any")
             AND d.Date < datetime(${toDateValue}) 
             AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH d, COUNT(*) AS edgeCount
-            ORDER BY edgeCount ${orderBy}
-            RETURN d.Title, edgeCount, d.DivisionId
+            WITH d, COUNT(*) AS voteCount
+            ORDER BY voteCount ${orderBy}
+            RETURN d.Title, voteCount, d.DivisionId
             LIMIT ${limit}`;
 
     }
