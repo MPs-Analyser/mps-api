@@ -129,6 +129,9 @@ interface QueryParams {
 
 //orgs that donated to party that awarded them a contract
 
+function escapeRegexSpecialChars(text:string) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+  }
 
 export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
 
@@ -142,20 +145,30 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     let cypher;
 
     //TODO need to add more params such as date range and also find out to get contract awarded to is different than party donated to
-    if (awardedBy !== "Any Party") {
+    if (awardedBy === "Any Party" && donatedTo === "Any Party") {
+        //just quering an organisation 
 
-        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
-       (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-       WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")
-       AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
-       AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
-       WITH org, awardedContractBy, donatedTo, COLLECT(DISTINCT c.Title) AS uniqueTitles, c.AwardedDate AS awardedDate
-       RETURN org.Name AS name, 
-       donatedTo.partyName AS donatedTo, 
-       awardedContractBy.partyName AS awardedContractBy, 
-       uniqueTitles,  
-       awardedDate
-       LIMIT ${limit}`
+        const formattedName = escapeRegexSpecialChars(name);
+        console.log("formattedName ", formattedName);
+        
+
+        cypher = `MATCH (org:Organisation)
+        WHERE (org.Name =~ '(?i).*${formattedName}.*' OR "${formattedName}" = "any")
+        RETURN org.Name, org.donorStatus as orgType, org.accountingUnitName AS accUnit, org.postcode
+        LIMIT ${limit}`;
+
+    //     cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(donatedTo:Party),
+    //    (org)-[:DONATED_TO]->(awardedContractBy:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+    //    WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")
+    //    AND (donatedTo.partyName =~ '(?i).*${donatedTo}.*')
+    //    AND (awardedContractBy.partyName =~ '(?i).*${awardedBy}.*')
+    //    WITH org, awardedContractBy, donatedTo, COLLECT(DISTINCT c.Title) AS uniqueTitles, c.AwardedDate AS awardedDate
+    //    RETURN org.Name AS name, 
+    //    donatedTo.partyName AS donatedTo, 
+    //    awardedContractBy.partyName AS awardedContractBy, 
+    //    uniqueTitles,  
+    //    awardedDate
+    //    LIMIT ${limit}`
 
 
     } else {
@@ -191,8 +204,11 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     driver = setDriver();
     const session = driver.session();
 
+    const formattedName = escapeRegexSpecialChars(donarName);
+        console.log("formattedName ", formattedName);
+
     const cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
-    WHERE d.donar =~ '(?i).*${donarName}.*'
+    WHERE d.donar =~ '(?i).*${formattedName}.*'
     RETURN 
     d.donar as donar, 
     d.accountingUnitName as accountingUnitName, 
