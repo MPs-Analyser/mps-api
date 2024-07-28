@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getContractsAwardedByCount, getContractsforOrg, queryContracts } from "../databases/neoManager";
+import { getContractsAwardedByCount, getContractsforOrg, queryContracts, getContractDetails } from "../databases/neoManager";
 
 const contractsRouter = express.Router();
 
@@ -32,5 +32,30 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
 });
 
+
+contractsRouter.get('/details', async (req: Request, res: Response) => {
+
+  const value: number = Number(req?.query?.value) || 0;
+
+  const supplier = req?.query?.supplier;
+
+  const title = req?.query?.title;
+
+
+  let result;
+
+  // @ts-ignore
+  result = await getContractDetails({ value, title, supplier });
+
+
+  // @ts-ignore
+  if (result && result.records) {
+    // @ts-ignore
+    res.json(result.records);
+  } else {
+    res.json({})
+  }
+
+});
 
 export default contractsRouter;

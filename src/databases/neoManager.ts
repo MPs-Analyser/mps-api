@@ -176,7 +176,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 
     } else if (awardedBy === "Any Party" && donatedTo !== "Any Party") {
 
-        logger.info("Query org details for donations but not contracts awarded bobby")
+        logger.info("Query org details for donations but not contracts awarded")
 
         cypher = `
         MATCH (d)-[r:DONATED_TO]-(p:Party)
@@ -391,6 +391,30 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
     ORDER BY contractCount
     `
 
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+export const getContractDetails = async ({ value=0, title="", supplier="" }) => {
+
+    logger.debug('getContractsAwardedByCount');
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+    const cypher = `
+    MATCH (con:Contract)    
+    WHERE con.Title = "${title}"    
+    AND con.AwardedValue = ${value}    
+    RETURN con    
+    `
     try {
         const result = await runCypher(cypher, session);
         return result;
