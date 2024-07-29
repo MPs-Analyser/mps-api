@@ -170,7 +170,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
         WITH org, COUNT(c) AS contractCount                
         WHERE (toLower(org.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
-        RETURN org.Name, contractCount
+        RETURN org.Name AS orgName, contractCount
         ORDER BY contractCount DESC
         LIMIT ${limit}`;
 
@@ -341,7 +341,7 @@ export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awarde
         WHERE contractCount > ${awardedCount}  
         AND org.Name <> ""
         AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-        RETURN org.Name, contractCount
+        RETURN org.Name AS orgName, contractCount
         ORDER BY contractCount
         LIMIT ${limit}`;
     } else {
@@ -387,7 +387,7 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
     WITH org, COUNT(c) AS contractCount
     WHERE contractCount > ${awardedCount}
     AND org.Name <> ""
-    RETURN org.Name, contractCount
+    RETURN org.Name AS orgName, contractCount
     ORDER BY contractCount
     `
 
