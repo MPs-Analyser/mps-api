@@ -827,7 +827,7 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
             WHERE r.votedAye = ${ayeOrNoBool}
             AND d.Date > datetime(${fromDateValue}) 
             AND d.Date < datetime(${toDateValue}) 
-            AND (d.Category= "${category}" OR "${category}"="Any")
+            AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")            
             AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH d, COUNT(*) AS voteCount
             ORDER BY voteCount ${orderBy}
@@ -838,7 +838,7 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
 
         cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)                    
             WHERE d.Date > datetime(${fromDateValue}) 
-            AND (d.Category= "${category}" OR "${category}"="Any")
+            AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")
             AND d.Date < datetime(${toDateValue}) 
             AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
             WITH d, COUNT(*) AS voteCount
