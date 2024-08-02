@@ -786,7 +786,7 @@ export const mostOrLeastVotingMps = async (partyName: string, category: string, 
     const cypher = 
         `MATCH (mp:Mp)-[]-(d:Division)
         WHERE (mp.partyName ${partyOperator} "${partyName}" OR "${partyName}" ${partyOperator} "Any")
-        AND (d.Category = "${category}" OR "${category}" = "Any")
+        AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")
         AND d.Date > datetime(${fromDateValue}) 
         AND d.Date < datetime(${toDateValue}) 
         AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
