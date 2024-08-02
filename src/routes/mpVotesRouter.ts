@@ -6,37 +6,24 @@ const mpVotesRouter = express.Router();
 mpVotesRouter.get('/', async (req: Request, res: Response) => {
 
   console.log('Get MP insights ', req.query);
+  
+  const limit = req?.query?.limit || 100;
+  
+  const orderby = req?.query?.orderby || "DESC";
 
-  // @ts-ignore
-  const limit: string = req?.query?.limit;
-
-  // @ts-ignore
-  const orderby: string = req?.query?.orderby;
-
-  // @ts-ignore
   const partyIncludes = req?.query?.partyIncludes;
 
-  // @ts-ignore
   const partyExcludes = req?.query?.partyExcludes;
-
-  // @ts-ignore
-  const voteCategory = req?.query?.voteCategory;
-
-  // @ts-ignore
+  
+  const category = req?.query?.category || "Any";
+  
   const fromDate = req?.query?.fromDate;
 
-  // @ts-ignore
   const toDate = req?.query?.toDate;
 
-  // @ts-ignore
   const name = req?.query?.name || "Any";
 
-  let partyToQuery = partyIncludes || partyExcludes;
-
-  // @ts-ignore
-  if (partyToQuery.toLowerCase() === 'any') {
-    partyToQuery = undefined;
-  }
+  const partyToQuery = partyIncludes || partyExcludes || "Any";
 
   let partyOperator = "=";
   if (partyExcludes) {
@@ -44,7 +31,7 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
   }
 
   // @ts-ignore
-  const result = await mostOrLeastVotingMps(partyToQuery, voteCategory, partyOperator, limit, orderby, fromDate, toDate, name);
+  const result = await mostOrLeastVotingMps(partyToQuery, category, partyOperator, limit, orderby, fromDate, toDate, name);
 
   if (result && result.records) {
     // @ts-ignore

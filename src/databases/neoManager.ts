@@ -400,7 +400,7 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
 }
 
-export const getContractDetails = async ({ value=0, title="", supplier="" }) => {
+export const getContractDetails = async ({ value = 0, title = "", supplier = "" }) => {
 
     logger.debug('getContractsAwardedByCount');
 
@@ -773,8 +773,8 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
     }
 }
 
-export const mostOrLeastVotingMps = async (partyName: string, voteCategory: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
-
+export const mostOrLeastVotingMps = async (partyName: string, category: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESC", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
+    
     //set to date to today if not provided 
     if (!toDate) {
         toDate = new Date().toISOString().substr(0, 10);
@@ -783,57 +783,19 @@ export const mostOrLeastVotingMps = async (partyName: string, voteCategory: stri
     const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
     const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
 
-    let cypher;
-
-    if (partyName) {
-
-        if (voteCategory) {
-            cypher = `MATCH (mp:Mp)-[]-(d:Division)
-            WHERE mp.partyName ${partyOperator} "${partyName}"
-            AND d.Category = "${voteCategory}"
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH mp, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
-            LIMIT ${limit}`;
-        } else {
-            cypher = `MATCH (mp:Mp)-[]-(d:Division)
-            WHERE mp.partyName ${partyOperator} "${partyName}"
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH mp, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
-            LIMIT ${limit}`;
-        }
-    } else {
-        if (voteCategory) {
-            cypher = `MATCH (mp:Mp)-[]-(d:Division)        
-            WHERE d.Category = "${voteCategory}"
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH mp, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
-            LIMIT ${limit}`;
-        } else {
-            cypher = `MATCH (mp:Mp)-[]-(d:Division)        
-            WHERE d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH mp, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
-            LIMIT ${limit}`;
-        }
-    }
+    const cypher = 
+        `MATCH (mp:Mp)-[]-(d:Division)
+        WHERE (mp.partyName ${partyOperator} "${partyName}" OR "${partyName}" ${partyOperator} "Any")
+        AND (d.Category = "${category}" OR "${category}" = "Any")
+        AND d.Date > datetime(${fromDateValue}) 
+        AND d.Date < datetime(${toDateValue}) 
+        AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
+        WITH mp, COUNT(*) AS voteCount
+        ORDER BY voteCount ${orderBy}
+        RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
+        LIMIT ${limit}`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = setDriver();
     const session = driver.session();
 
