@@ -56,7 +56,6 @@ export const getMpNames = async () => {
     }
 }
 
-
 export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year = 0, votes = ">0", status = "All" }) => {
     logger.debug("Searching MPs");
 
@@ -78,10 +77,8 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
            COUNT(d) as totalVotes,
            COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
            COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
-  
       // Filter based on votes if specified
       WHERE (totalVotes ${votes} OR "${votes}" = ">0") 
-  
       RETURN 
         s.nameDisplayAs,
         s.gender, 
@@ -91,8 +88,7 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
         totalVotes,
         ayeVotes,
         nayVotes,
-        s.isActive
-      `;
+        s.isActive`;
 
     try {
         const result = await runCypher(cypher, session);
@@ -126,9 +122,7 @@ interface QueryParams {
     donatedTo?: string;
 }
 
-
 //orgs that donated to party that awarded them a contract
-
 function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -143,22 +137,17 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     const session = driver.session();
 
     const formattedName = escapeRegexSpecialChars(name);
-
-
+    
     let cypher;
-
 
     if (awardedBy === "Any Party" && donatedTo === "Any Party") {
         //just quering an organisation 
-
         logger.info("Query just org details")
 
         cypher = `MATCH (org:Organisation)
         WHERE (org.Name =~ '(?i).*${formattedName}.*' OR "${formattedName}" = "any")
         RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
         LIMIT ${limit}`;
-
-
 
     } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") {
 
@@ -170,7 +159,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
         WITH org, COUNT(c) AS contractCount                
         WHERE (toLower(org.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
-        RETURN org.Name AS orgName, contractCount
+        RETURN org.Name AS \`Awarded to\`, contractCount
         ORDER BY contractCount DESC
         LIMIT ${limit}`;
 
@@ -184,13 +173,11 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
         AND (toLower(d.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
         AND d.Name <> ""
            RETURN
-           p.partyName AS \`Donated To\`,
            d.Name as name,
+           p.partyName AS \`Donated To\`,           
            COUNT(r) AS \`Donated Count\`,
            SUM(r.amount) AS \`Total Value\`
-           ORDER BY SUM(r.amount) DESC;
-        `
-
+           ORDER BY SUM(r.amount) DESC;`
     } else {
         //TODO not done this one properly yet 
         logger.info("Query org details for donations AND contracts awarded")
@@ -212,10 +199,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     } finally {
         session.close();
     }
-
 }
-
-
 
 export const getDonorDetails = async ({ donarName = "" }) => {
 
@@ -247,7 +231,6 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     } finally {
         session.close();
     }
-
 }
 
 export const getMultiPartyDonars = async () => {
@@ -276,10 +259,7 @@ export const getMultiPartyDonars = async () => {
     } finally {
         session.close();
     }
-
 }
-
-
 
 export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
@@ -307,12 +287,73 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     } finally {
         session.close();
     }
-
 }
 
-const runCypherWithParams = async (cypher: string, params: object, session: any) => {
-    logger.trace(cypher);
-    try {
+export const queryContracts = async ({
+    awardedCount = 0,
+    orgName = "Any",
+    awardedBy = "Any Party",
+    limit = 1000,
+    groupByContractCount = false,
+}) => {
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    driver = setDriver();
+    const session = driver.session();
+
+    const commonQuery = `
+      MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+      WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
+        AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
+        AND org.Name <> ""`;
+
+    let result, cypher;
+    
+    if (groupByContractCount) {
+
+        logger.debug('queryContracts group by count');
+
+        cypher = `
+        ${commonQuery}
+        WITH org, COUNT(c) AS contractCount
+        WHERE contractCount > $awardedCount
+        RETURN org.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`
+        ORDER BY contractCount 
+        LIMIT toInteger($limit)`;
+
+    } else {
+
+        logger.debug('queryContracts no group by');
+        
+        cypher = `
+        ${commonQuery}
+        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, party.partyName AS \`Awarded by\`, c.AwardedValue AS value
+        ORDER BY c.Name
+        LIMIT toInteger($limit)`;
+
+    }
+
+    result = await runCypherWithParams(cypher, session, {
+        orgName,
+        awardedBy,
+        awardedCount,
+        limit
+    });
+    session.close();
+    return result;
+};
+
+const runCypherWithParams = async (cypher: string, session: any, params: object) => {
+
+    const logQuery = cypher.replace(/\$(\w+)/g, (_, paramName) => {
+        //@ts-ignore
+        const value = params[paramName];
+        return typeof value === 'string' ? `"${value}"` : value; 
+    });
+    logger.debug(`Final Cypher Query:\n${logQuery}`);
+    
+    // logger.trace(cypher);
+    try {        
         const result = await session.run(cypher, params);
         return result;
     } catch (error) {
@@ -321,56 +362,6 @@ const runCypherWithParams = async (cypher: string, params: object, session: any)
 }
 
 
-
-export const queryContracts = async ({ awardedCount = 0, orgName = "Any", awardedBy = "Any Party", limit = 1000, groupByContractCount = false }) => {
-
-    logger.debug('queryContracts');
-
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-
-    driver = setDriver();
-    const session = driver.session();
-    let cypher;
-
-    if (groupByContractCount) {
-        cypher = `
-        MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-        WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-        AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
-        WITH org, COUNT(c) AS contractCount
-        WHERE contractCount > ${awardedCount}  
-        AND org.Name <> ""
-        AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-        RETURN org.Name AS orgName, contractCount
-        ORDER BY contractCount
-        LIMIT ${limit}`;
-    } else {
-
-        cypher = `
-        MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-        WHERE (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-        AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"        
-        AND org.Name <> ""
-        AND (toLower(org.Name) CONTAINS toLower("${orgName}") OR "${orgName}" = "Any")
-        RETURN org.Name, c.Title, c.AwardedValue AS value
-        ORDER BY c.Name
-        LIMIT ${limit}`;
-    }
-
-    // const params = {
-    //     awardedCount,
-    //     orgName,
-    //     partyName: awardedBy
-    // };
-
-    try {
-        const result = await runCypher(cypher, session);
-        return result;
-    } finally {
-        session.close();
-    }
-
-}
 
 
 export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
@@ -621,7 +612,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
     RETURN d.DivisionId, d.Title, d.Date`;
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+
     driver = setDriver();
     const session = driver.session();
 
@@ -774,7 +765,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
 }
 
 export const mostOrLeastVotingMps = async (partyName: string, category: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESC", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
-    
+
     //set to date to today if not provided 
     if (!toDate) {
         toDate = new Date().toISOString().substr(0, 10);
@@ -783,7 +774,7 @@ export const mostOrLeastVotingMps = async (partyName: string, category: string, 
     const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
     const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
 
-    const cypher = 
+    const cypher =
         `MATCH (mp:Mp)-[]-(d:Division)
         WHERE (mp.partyName ${partyOperator} "${partyName}" OR "${partyName}" ${partyOperator} "Any")
         AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")
