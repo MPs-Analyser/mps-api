@@ -3,3 +3,7 @@ dist
 app.log
 error.log
 **/.env*
+.env
+.env AURA
+.env LOCAL
+.gitignore
