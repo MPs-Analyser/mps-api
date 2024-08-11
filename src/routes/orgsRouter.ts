@@ -16,14 +16,19 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const donatedTo: string = req?.query?.donatedTo || "Any Party";;
 
-  const limit = req?.query?.limit;
+  const limit = req?.query?.limit || 10;
 
   //@ts-ignore
-  const result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit });
+  const result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit: Number(limit) });
 
-  // @ts-ignore
-  res.json(result.records);
-  
+  if (result?.records) {
+    res.json(result.records);
+  } else {
+    res.json([]);
+  }
+
+
+
 });
 
 

@@ -115,20 +115,11 @@ export const getParties = async () => {
     }
 }
 
-// Define an interface for the function parameters
-interface QueryParams {
-    name?: string;
-    awardedBy?: string; // If this is relevant to the query, update the cypher accordingly
-    donatedTo?: string;
-}
-
-//orgs that donated to party that awarded them a contract
 function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
-
     logger.debug(`Query orgs and individuals for ${name} ${awardedBy} ${donatedTo}`);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -136,70 +127,76 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     driver = setDriver();
     const session = driver.session();
 
-    const formattedName = escapeRegexSpecialChars(name);
-    
     let cypher;
+    let params = {
+        name: escapeRegexSpecialChars(name),
+        awardedBy: escapeRegexSpecialChars(awardedBy),
+        donatedTo: escapeRegexSpecialChars(donatedTo),
+        limit
+    }; // Create a params object
 
     if (awardedBy === "Any Party" && donatedTo === "Any Party") {
-        //just quering an organisation 
-        logger.info("Query just org details")
+        logger.info("Query just org details");
 
         cypher = `MATCH (org:Organisation)
-        WHERE (org.Name =~ '(?i).*${formattedName}.*' OR "${formattedName}" = "any")
+        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
+        AND org.Name <> ""
         RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
-        LIMIT ${limit}`;
+        ORDER BY org.Name
+        LIMIT toInteger($limit)`;
 
     } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") {
-
-        logger.info("Query org details for contract awarded but not donations")
+        logger.info("Query org details for contract awarded but not donations");
 
         cypher = `
         MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-        WHERE (toLower(org.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
-        AND party.partyName = "${awardedBy}" OR "${awardedBy}" = "Any Party"
-        WITH org, COUNT(c) AS contractCount                
-        WHERE (toLower(org.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
+        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
+        AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
+        WITH org, COUNT(c) AS contractCount        
+        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
         RETURN org.Name AS \`Awarded to\`, contractCount
         ORDER BY contractCount DESC
-        LIMIT ${limit}`;
+        LIMIT toInteger($limit)`;
 
     } else if (awardedBy === "Any Party" && donatedTo !== "Any Party") {
-
-        logger.info("Query org details for donations but not contracts awarded")
+        logger.info("Query org details for donations but not contracts awarded");
 
         cypher = `
         MATCH (d)-[r:DONATED_TO]-(p:Party)
-        WHERE (p.partyName = "${donatedTo}" OR "${donatedTo}" = "Any")
-        AND (toLower(d.Name) CONTAINS toLower("${formattedName}") OR "${formattedName}" = "Any")
+        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any")
+        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
         AND d.Name <> ""
-           RETURN
-           d.Name as name,
-           p.partyName AS \`Donated To\`,           
-           COUNT(r) AS \`Donated Count\`,
-           SUM(r.amount) AS \`Total Value\`
-           ORDER BY SUM(r.amount) DESC;`
+          RETURN
+          d.Name as name,
+          p.partyName AS \`Donated To\`,        
+          COUNT(r) AS \`Donated Count\`,
+          SUM(r.amount) AS \`Total Value\`
+          ORDER BY SUM(r.amount) DESC
+          LIMIT toInteger($limit)`;
+
     } else {
         //TODO not done this one properly yet 
-        logger.info("Query org details for donations AND contracts awarded")
+        logger.info("Query org details for donations AND contracts awarded");
 
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE (org.Name =~ '(?i).*${name}.*' OR "${name}" = "any")
-        AND (party.partyName = "${donatedTo}" or "${donatedTo}" = "Any Party")
+        WHERE (org.Name =~ '(?i).*$name.*' OR $name = "any")
+        AND (party.partyName = $donatedTo or $donatedTo = "Any Party")
         WITH org, party, collect(c) AS contracts
         UNWIND contracts AS c
         WITH org, party, c ORDER BY c.AwardedDate DESC
         WITH org.Name AS name, party.partyName AS donatedTo, party.partyName AS awardedBy, c.Title AS title, collect(c.AwardedDate) AS awardedDates
         RETURN name, donatedTo, awardedBy, title, head(awardedDates) AS date
-        LIMIT ${limit}`
+        LIMIT toInteger($limit)`;
     }
 
     try {
-        const result = await runCypher(cypher, session);
+        const result = await runCypherWithParams(cypher, session, params); // Pass the params object
         return result;
     } finally {
         session.close();
     }
 }
+
 
 export const getDonorDetails = async ({ donarName = "" }) => {
 
@@ -308,7 +305,7 @@ export const queryContracts = async ({
         AND org.Name <> ""`;
 
     let result, cypher;
-    
+
     if (groupByContractCount) {
 
         logger.debug('queryContracts group by count');
@@ -318,17 +315,17 @@ export const queryContracts = async ({
         WITH org, COUNT(c) AS contractCount
         WHERE contractCount > $awardedCount
         RETURN org.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`
-        ORDER BY contractCount 
+        ORDER BY contractCount DESC 
         LIMIT toInteger($limit)`;
 
     } else {
 
         logger.debug('queryContracts no group by');
-        
+
         cypher = `
         ${commonQuery}
         RETURN c.Title AS contract, org.Name AS \`Awarded to\`, party.partyName AS \`Awarded by\`, c.AwardedValue AS value
-        ORDER BY c.Name
+        ORDER BY value DESC
         LIMIT toInteger($limit)`;
 
     }
@@ -343,26 +340,26 @@ export const queryContracts = async ({
     return result;
 };
 
+
 const runCypherWithParams = async (cypher: string, session: any, params: object) => {
 
     const logQuery = cypher.replace(/\$(\w+)/g, (_, paramName) => {
         //@ts-ignore
         const value = params[paramName];
-        return typeof value === 'string' ? `"${value}"` : value; 
+
+        // Check if the value is a number before wrapping it in quotes
+        return typeof value === 'string' ? `'${value}'` : value;
     });
+
     logger.debug(`Final Cypher Query:\n${logQuery}`);
-    
-    // logger.trace(cypher);
-    try {        
+
+    try {
         const result = await session.run(cypher, params);
         return result;
     } catch (error) {
         logger.error("ERROR RUNNING CYPHER: " + error);
     }
 }
-
-
-
 
 export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
 
@@ -381,14 +378,12 @@ export const getContractsAwardedByCount = async ({ awardedCount = 1000 }) => {
     RETURN org.Name AS orgName, contractCount
     ORDER BY contractCount
     `
-
     try {
         const result = await runCypher(cypher, session);
         return result;
     } finally {
         session.close();
     }
-
 }
 
 export const getContractDetails = async ({ value = 0, title = "", supplier = "" }) => {
@@ -443,9 +438,7 @@ export const getContractsforOrg = async ({ orgName = "", limit = 1000 }) => {
     } finally {
         session.close();
     }
-
 }
-
 
 export const getDonationSummary = async () => {
 
@@ -504,8 +497,7 @@ export const getDivisionNames = async () => {
 
     logger.debug('Getting DIVISION Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
     driver = setDriver();
     const session = driver.session();
 
@@ -549,8 +541,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
     COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
     COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes`
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
     driver = setDriver();
     const session = driver.session();
 
