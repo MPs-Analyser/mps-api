@@ -254,10 +254,10 @@ export const queryDonation = async ({ limit = 10, donarName = "any", minNumberOf
      AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0) 
      RETURN 
      d.donar AS donor,
-     SIZE(uniquePartyNames) AS numberOfPartiesDonated,
-     totalDonationValue,
-     donationCount,
-     uniquePartyNames AS partyNames
+     totalDonationValue AS \`Donated Amount\`,     
+     donationCount AS \`Donations Made\`,
+    //  SIZE(uniquePartyNames) AS numberOfPartiesDonated,         
+     uniquePartyNames AS \`Donated To\`     
      ORDER BY totalDonationValue DESC
      LIMIT toInteger($limit)
     `
