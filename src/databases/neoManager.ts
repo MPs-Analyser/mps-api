@@ -198,31 +198,66 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 }
 
 
-export const queryDonation = async ({ limit=10, donarName="" }) => {
+export const queryDonation = async ({ limit = 10, donarName = "any" }) => {
 
     const formattedName = escapeRegexSpecialChars(donarName);
 
+    const params = {
+        minTotalDonationValue: 1000,
+        minDonationCount: 5,
+        minNumberOfPartiesDonated: 2,
+        name: formattedName
+    }
+
+
+    //     const cypher = `
+    //     MATCH (d)-[r:DONATED_TO]->(p:Party)
+    //     WITH d, 
+    //         COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
+    //         SUM(r.amount) AS totalDonationValue,
+    //         COUNT(r) AS donationCount 
+    //     RETURN 
+    //         d.donar AS donor,
+    //         SIZE(uniquePartyNames) AS numberOfPartiesDonated,
+    //         totalDonationValue,
+    //         donationCount,
+    //         uniquePartyNames AS partyNames
+    //     ORDER BY totalDonationValue DESC
+    //     LIMIT 10    
+    // `
+
     const cypher = `
-    MATCH (d)-[r:DONATED_TO]->(p:Party)
-    WITH d, 
-        COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
-        SUM(r.amount) AS totalDonationValue,
-        COUNT(r) AS donationCount 
-    RETURN 
-        d.donar AS donor,
-        SIZE(uniquePartyNames) AS numberOfPartiesDonated,
-        totalDonationValue,
-        donationCount,
-        uniquePartyNames AS partyNames
-    ORDER BY totalDonationValue DESC
-    LIMIT 10    
-`
+        MATCH (d)-[r:DONATED_TO]->(p:Party)
+        WITH d, 
+            COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
+            SUM(r.amount) AS totalDonationValue,
+            COUNT(r) AS donationCount 
+        WHERE totalDonationValue >= $minTotalDonationValue 
+        AND donationCount >= $minDonationCount
+        AND SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated
+        RETURN 
+            d.donar AS donor,
+            SIZE(uniquePartyNames) AS numberOfPartiesDonated,
+            totalDonationValue,
+            donationCount,
+            uniquePartyNames AS partyNames
+        ORDER BY totalDonationValue DESC
+        LIMIT 10
+    `
+
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
     driver = setDriver();
     const session = driver.session();
 
+
+    try {
+        const result = await runCypherWithParams(cypher, session, params); // Pass the params object
+        return result;
+    } finally {
+        session.close();
+    }
 
 
 }
