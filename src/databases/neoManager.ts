@@ -198,6 +198,35 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
 }
 
 
+export const queryDonation = async ({ limit=10, donarName="" }) => {
+
+    const formattedName = escapeRegexSpecialChars(donarName);
+
+    const cypher = `
+    MATCH (d)-[r:DONATED_TO]->(p:Party)
+    WITH d, 
+        COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
+        SUM(r.amount) AS totalDonationValue,
+        COUNT(r) AS donationCount 
+    RETURN 
+        d.donar AS donor,
+        SIZE(uniquePartyNames) AS numberOfPartiesDonated,
+        totalDonationValue,
+        donationCount,
+        uniquePartyNames AS partyNames
+    ORDER BY totalDonationValue DESC
+    LIMIT 10    
+`
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+
+
+}
+
 export const getDonorDetails = async ({ donarName = "" }) => {
 
     logger.debug(`Getting donations for donar name ${donarName}`);
@@ -497,7 +526,7 @@ export const getDivisionNames = async () => {
 
     logger.debug('Getting DIVISION Names...');
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
@@ -541,7 +570,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
     COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
     COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes`
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
