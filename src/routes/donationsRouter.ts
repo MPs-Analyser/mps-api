@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails, getMultiPartyDonars } from "../databases/neoManager";
+import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails, getMultiPartyDonars, queryDonation, topXdonars } from "../databases/neoManager";
 
 const donationsRouter = express.Router();
 
@@ -16,72 +16,98 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const multiParty: string = Boolean(req?.query?.multiparty) || Boolean(req?.query?.multiParty);
 
-  console.log("check ", donarName);
-  
   // @ts-ignore
   const formattedResult = [];
 
-  if (multiParty) {
+  // @ts-ignore
+  const generalQuery: string | undefined = req?.query?.generalQuery;
 
-        // @ts-ignore
-        const result = await getMultiPartyDonars();        
+  const limit: number = Number(req?.query?.limit || 0);
+  const minDonationCount: number = Number(req?.query?.minDonationCount || 0);
+  const minNumberOfPartiesDonated: number = Number(req?.query?.minNumberOfPartiesDonated || 0);
+  const minTotalDonationValue: number = Number(req?.query?.minTotalDonationValue || 0);
 
-        if (result && result.records && Array.isArray(result.records)) {                  
-          
-          // @ts-ignore
-          result.records.forEach(i => {                
-            const record = { 
-              donor: i._fields[i._fieldLookup.donor], 
-              numberOfPartiesDonated: i._fields[i._fieldLookup.numberOfPartiesDonated].low, 
-              partyNames: i._fields[i._fieldLookup.partyNames],               
-            }
-    
-            formattedResult.push(record);
-          });
+  // @ts-ignore
+  const topDonars: string | undefined = req?.query?.topDonars;
+
+  if (topDonars) {
+    //@ts-ignore
+    const result = await topXdonars({ limit });
+    res.json(result.records);
+
+    topXdonars
+
+  } else if (generalQuery) {
+    //@ts-ignore
+    const result = await queryDonation({ donarName, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue });
+    res.json(result.records);
+  } else if (multiParty) {
+
+    // @ts-ignore
+    const result = await getMultiPartyDonars();
+
+    if (result && result.records && Array.isArray(result.records)) {
+
+      // @ts-ignore
+      result.records.forEach(i => {
+        const record = {
+          donor: i._fields[i._fieldLookup.donor],
+          numberOfPartiesDonated: i._fields[i._fieldLookup.numberOfPartiesDonated].low,
+          partyNames: i._fields[i._fieldLookup.partyNames],
         }
+
+        formattedResult.push(record);
+      });
+    }
+    // @ts-ignore
+    res.json(formattedResult)
   } else if (donarName) {
 
     const result = await getDonorDetails({ donarName });
 
-    if (result && result.records && Array.isArray(result.records)) {                  
-      
+    if (result && result.records && Array.isArray(result.records)) {
+
       // @ts-ignore
-      result.records.forEach(i => {                
-        
-        const record = { 
-          donar: i._fields[i._fieldLookup.donar], 
-          accountingUnitName: i._fields[i._fieldLookup.accountingUnitName], 
-          postcode: i._fields[i._fieldLookup.postcode], 
+      result.records.forEach(i => {
+
+        const record = {
+          donar: i._fields[i._fieldLookup.donar],
+          accountingUnitName: i._fields[i._fieldLookup.accountingUnitName],
+          postcode: i._fields[i._fieldLookup.postcode],
           donorStatus: i._fields[i._fieldLookup.donorStatus],
           amount: i._fields[i._fieldLookup.amount].low ? i._fields[i._fieldLookup.amount].low : i._fields[i._fieldLookup.amount],
           donationType: i._fields[i._fieldLookup.donationType],
           receivedDate: i._fields[i._fieldLookup.receivedDate],
-          partyName: i._fields[i._fieldLookup.partyName],          
+          partyName: i._fields[i._fieldLookup.partyName],
         }
-        formattedResult.push(record);      
-      });      
+        formattedResult.push(record);
+      });
     }
-    
+    // @ts-ignore
+    res.json(formattedResult)
 
   } else if (partyName) {
 
     // @ts-ignore
-    const result = await getDonorsForParty({ partyName });        
+    const result = await getDonorsForParty({ partyName });
 
-    if (result && result.records && Array.isArray(result.records)) {                  
-      
+    if (result && result.records && Array.isArray(result.records)) {
+
       // @ts-ignore
-      result.records.forEach(i => {                
-        const record = { 
-          partyName: i._fields[i._fieldLookup.partyName], 
-          donar: i._fields[i._fieldLookup.donar], 
-          donatedCout: i._fields[i._fieldLookup.donated].low, 
+      result.records.forEach(i => {
+        const record = {
+          partyName: i._fields[i._fieldLookup.partyName],
+          donar: i._fields[i._fieldLookup.donar],
+          donatedCout: i._fields[i._fieldLookup.donated].low,
           totalDonationValue: i._fields[i._fieldLookup.totalDonationValue].low ? i._fields[i._fieldLookup.totalDonationValue].low : i._fields[i._fieldLookup.totalDonationValue]
         }
 
         formattedResult.push(record);
       });
     }
+
+    // @ts-ignore
+    res.json(formattedResult)
 
   } else {
 
@@ -116,14 +142,11 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
           totalDonationValue: item._fields[2].low ? item._fields[2].low : item._fields[2]
         });
       });
-
     }
-
+    // @ts-ignore
+    res.json(formattedResult)
   }
-console.log("the end");
 
-  // @ts-ignore
-  res.json(formattedResult)
 
 
 });
