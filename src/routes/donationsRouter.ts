@@ -30,6 +30,9 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const topDonars: string | undefined = req?.query?.topDonars;
 
+  console.log("lets go ", minTotalDonationValue);
+  
+
   if (topDonars) {
     //@ts-ignore
     const result = await topXdonars({ limit });
@@ -37,7 +40,7 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
 
     topXdonars
 
-  } else if (generalQuery) {
+  } else if (minTotalDonationValue) {
     //@ts-ignore
     const result = await queryDonation({ donarName, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue });
     res.json(result.records);
