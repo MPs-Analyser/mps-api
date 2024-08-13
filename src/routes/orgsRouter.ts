@@ -26,7 +26,7 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
 
   if (minTotalDonationValue) {
     //@ts-ignore
-    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue });    
+    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, party: donatedTo });    
   } else {
     //@ts-ignore
     result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit });

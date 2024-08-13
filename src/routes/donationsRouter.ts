@@ -19,32 +19,7 @@ donationsRouter.get('/', async (req: Request, res: Response) => {
   // @ts-ignore
   const formattedResult = [];
 
-  // @ts-ignore
-  const generalQuery: string | undefined = req?.query?.generalQuery;
-
-  const limit: number = Number(req?.query?.limit || 0);
-  const minDonationCount: number = Number(req?.query?.minDonationCount || 0);
-  const minNumberOfPartiesDonated: number = Number(req?.query?.minNumberOfPartiesDonated || 0);
-  const minTotalDonationValue: number = Number(req?.query?.minTotalDonationValue || 0);
-
-  // @ts-ignore
-  const topDonars: string | undefined = req?.query?.topDonars;
-
-  console.log("lets go ", minTotalDonationValue);
-  
-
-  if (topDonars) {
-    //@ts-ignore
-    const result = await topXdonars({ limit });
-    res.json(result.records);
-
-    topXdonars
-
-  } else if (minTotalDonationValue) {
-    //@ts-ignore
-    const result = await queryDonation({ donarName, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue });
-    res.json(result.records);
-  } else if (multiParty) {
+  if (multiParty) {
 
     // @ts-ignore
     const result = await getMultiPartyDonars();

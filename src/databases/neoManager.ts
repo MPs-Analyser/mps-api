@@ -138,7 +138,7 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     if (awardedBy === "Any Party" && donatedTo === "Any Party") {
         logger.info("Query just org details");
 
-        cypher = `MATCH (org:Organisation)
+        cypher = `MATCH (org)
         WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
         AND org.Name <> ""
         RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
@@ -230,7 +230,14 @@ export const topXdonars = async ({limit=10}) => {
   }
   
 
-export const queryDonation = async ({ limit = 10, donarName = "any", minNumberOfPartiesDonated=0, minTotalDonationValue=0, minDonationCount=0 }) => {
+export const queryDonation = async ({ 
+    limit = 10, 
+    donarName = "any", 
+    minNumberOfPartiesDonated=0, 
+    minTotalDonationValue=0, 
+    minDonationCount=0, 
+    party="Any Party"
+}) => {
 
     const formattedName = escapeRegexSpecialChars(donarName);
 
@@ -239,28 +246,30 @@ export const queryDonation = async ({ limit = 10, donarName = "any", minNumberOf
         minDonationCount,
         minNumberOfPartiesDonated,
         name: formattedName,
+        party,
         limit
     }
-
+    
     const cypher = `
-     MATCH (d)-[r:DONATED_TO]->(p:Party)
+     MATCH (d)-[r:DONATED_TO]->(p:Party)     
+     WHERE (p.partyName = $party OR $party = "Any Party")
      WITH d, 
      COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
      SUM(r.amount) AS totalDonationValue,
      COUNT(r) AS donationCount 
-     WHERE (toLower(d.Name) = toLower($name) OR $name = "any") 
+     WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
      AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
      AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
-     AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0) 
+     AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
      RETURN 
      d.donar AS donor,
      totalDonationValue AS \`Donated Amount\`,     
-     donationCount AS \`Donations Made\`,
-    //  SIZE(uniquePartyNames) AS numberOfPartiesDonated,         
+     donationCount AS \`Donations Made\`,    
      uniquePartyNames AS \`Donated To\`     
      ORDER BY totalDonationValue DESC
      LIMIT toInteger($limit)
     `
+
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
