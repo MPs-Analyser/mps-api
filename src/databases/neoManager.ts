@@ -197,10 +197,10 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     }
 }
 
-export const topXdonars = async ({limit=10}) => {
+export const topXdonars = async ({ limit = 10 }) => {
 
     const params = { limit };
-  
+
     const cypher = `
       MATCH (d)-[r:DONATED_TO]->(p:Party)
       WITH d, 
@@ -215,71 +215,107 @@ export const topXdonars = async ({limit=10}) => {
       ORDER BY totalDonationValue DESC
       LIMIT toInteger($limit)
     `;
-  
+
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-  
+
     driver = setDriver();
     const session = driver.session();
-  
-    try {
-      const result = await runCypherWithParams(cypher, session, params); 
-      return result;
-    } finally {
-      session.close();
-    }
-  }
-  
 
-export const queryDonation = async ({ 
-    limit = 10, 
-    donarName = "any", 
-    minNumberOfPartiesDonated=0, 
-    minTotalDonationValue=0, 
-    minDonationCount=0, 
-    party="Any Party"
+    try {
+        const result = await runCypherWithParams(cypher, session, params);
+        return result;
+    } finally {
+        session.close();
+    }
+}
+
+export const queryDonation = async ({
+    limit = 10,
+    donarName = "any",
+    minNumberOfPartiesDonated = 0,
+    minTotalDonationValue = 0,
+    minDonationCount = 0,
+    donatedTo = "Any Party",
+    awardedBy = "Any Party",
+    minContractCount = 0
 }) => {
 
     const formattedName = escapeRegexSpecialChars(donarName);
 
     const params = {
+        name: formattedName,
         minTotalDonationValue,
         minDonationCount,
         minNumberOfPartiesDonated,
-        name: formattedName,
-        party,
+        donatedTo,
+        awardedBy,
+        minContractCount,
         limit
     }
-    
-    const cypher = `
-     MATCH (d)-[r:DONATED_TO]->(p:Party)     
-     WHERE (p.partyName = $party OR $party = "Any Party")
-     WITH d, 
-     COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
-     SUM(r.amount) AS totalDonationValue,
-     COUNT(r) AS donationCount 
-     WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
-     AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
-     AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
-     AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
-     RETURN 
-     d.donar AS donor,
-     totalDonationValue AS \`Donated Amount\`,     
-     donationCount AS \`Donations Made\`,    
-     uniquePartyNames AS \`Donated To\`     
-     ORDER BY totalDonationValue DESC
-     LIMIT toInteger($limit)
-    `
+    let cypher;
 
+    if (minContractCount && minTotalDonationValue) { //contracts awarded to org by party they donated to
+        logger.debug("q1: contracts awarded to org by party they donated to");
+
+        cypher = `
+        MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
+        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
+        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
+        WITH d, p, r, collect(c) AS contracts
+        WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
+        WHERE contractCount > $minContractCount
+        RETURN name, donatedTo AS \`Donated to\`, totalDonationValue AS \`Donation Value\`, donationCount, awardedBy AS \`Awarded Contract by\`, contractCount AS \`Contracts awarded\`
+        ORDER BY name
+        LIMIT toInteger($limit)        
+        `
+    } else if (minContractCount && !minTotalDonationValue) { //min contracts recieved by org but not interested in 
+
+        logger.debug("q2: min contracts recieved by org but not interested in ");
+        
+        cypher = `
+        MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
+        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
+        AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
+        AND d.Name <> ""
+        WITH d, COUNT(c) AS contractCount, toInteger(SUM(c.AwardedValue)) AS awardedValue
+        WHERE contractCount > $minContractCount
+        RETURN d.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`, awardedValue AS \`Awarded Value\`
+        ORDER BY contractCount DESC 
+        LIMIT toInteger($limit)
+        `;
+
+
+    } else { //donations made to party 
+        logger.debug("q3: donations made to party "); 
+        
+        cypher = `
+        MATCH (d)-[r:DONATED_TO]->(p:Party)     
+        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
+        WITH d, 
+        COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
+        SUM(r.amount) AS totalDonationValue,
+        COUNT(r) AS donationCount 
+        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
+        AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
+        AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
+        AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
+        RETURN 
+        d.donar AS donor,
+        totalDonationValue AS \`Donated Amount\`,     
+        donationCount AS \`Donations Made\`,    
+        uniquePartyNames AS \`Donated To\`     
+        ORDER BY totalDonationValue DESC
+        LIMIT toInteger($limit)
+       `
+    }
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
     driver = setDriver();
     const session = driver.session();
 
-    console.log("lets go bobby!");
-    
     try {
-        const result = await runCypherWithParams(cypher, session, params); 
+        const result = await runCypherWithParams(cypher, session, params);
         return result;
     } finally {
         session.close();
@@ -297,7 +333,6 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     const session = driver.session();
 
     const formattedName = escapeRegexSpecialChars(donarName);
-    console.log("formattedName ", formattedName);
 
     const cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
     WHERE d.donar =~ '(?i).*${formattedName}.*'
@@ -389,7 +424,7 @@ export const queryContracts = async ({
 
     const commonQuery = `
       MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-      WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
+      WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
         AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
         AND org.Name <> ""`;
 

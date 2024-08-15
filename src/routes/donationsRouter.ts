@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails, getMultiPartyDonars, queryDonation, topXdonars } from "../databases/neoManager";
+import { getDonationSummary, getParties, getDonorsForParty, getDonorDetails, getMultiPartyDonars } from "../databases/neoManager";
 
 const donationsRouter = express.Router();
 

@@ -21,12 +21,13 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   const minDonationCount: number = Number(req?.query?.minDonationCount || 0);
   const minNumberOfPartiesDonated: number = Number(req?.query?.minNumberOfPartiesDonated || 0);
   const minTotalDonationValue: number = Number(req?.query?.minTotalDonationValue || 0);
+  const minContractCount: number = Number(req?.query?.minContractCount || 0);
 
   let result;
 
-  if (minTotalDonationValue) {
+  if (minTotalDonationValue || minContractCount) {
     //@ts-ignore
-    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, party: donatedTo });    
+    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, donatedTo, awardedBy, minContractCount });    
   } else {
     //@ts-ignore
     result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit });
