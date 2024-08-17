@@ -120,7 +120,8 @@ function escapeRegexSpecialChars(text: string) {
 }
 
 export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
-    logger.debug(`Query orgs and individuals for ${name} ${awardedBy} ${donatedTo}`);
+    
+    logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
 
