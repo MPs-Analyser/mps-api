@@ -120,7 +120,7 @@ function escapeRegexSpecialChars(text: string) {
 }
 
 export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
-    
+
     logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -272,7 +272,7 @@ export const queryDonation = async ({
     } else if (minContractCount && !minTotalDonationValue) { //min contracts recieved by org but not interested in 
 
         logger.debug("q2: min contracts recieved by org but not interested in ");
-        
+
         cypher = `
         MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
         WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
@@ -287,8 +287,8 @@ export const queryDonation = async ({
 
 
     } else { //donations made to party 
-        logger.debug("q3: donations made to party "); 
-        
+        logger.debug("q3: donations made to party ");
+
         cypher = `
         MATCH (d)-[r:DONATED_TO]->(p:Party)     
         WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
@@ -411,23 +411,38 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     }
 }
 
+
+
 export const queryContracts = async ({
     awardedCount = 0,
     orgName = "Any",
     awardedBy = "Any Party",
     limit = 1000,
     groupByContractCount = false,
+    contractFromDate = constants.EARLIEST_FROM_DATE,
+    contractToDate = new Date().toISOString().substring(0, 10)
 }) => {
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
+    const params = { 
+        orgName,
+        awardedBy,
+        awardedCount,
+        contractFromDate,
+        contractToDate,
+        limit        
+    }
+
     const commonQuery = `
-      MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-      WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
-        AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
-        AND org.Name <> ""`;
+    MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+    WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
+      AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
+      AND org.Name <> ""
+      AND c.AwardedDate >= date($contractFromDate)
+      AND c.AwardedDate <= date($contractToDate)`
 
     let result, cypher;
 
@@ -446,7 +461,7 @@ export const queryContracts = async ({
     } else {
 
         logger.debug('queryContracts no group by');
-
+    
         cypher = `
         ${commonQuery}
         RETURN c.Title AS contract, org.Name AS \`Awarded to\`, party.partyName AS \`Awarded by\`, c.AwardedValue AS value
@@ -455,12 +470,7 @@ export const queryContracts = async ({
 
     }
 
-    result = await runCypherWithParams(cypher, session, {
-        orgName,
-        awardedBy,
-        awardedCount,
-        limit
-    });
+    result = await runCypherWithParams(cypher, session, params);
     session.close();
     return result;
 };
@@ -647,7 +657,7 @@ export const voteCounts = async (id: number, fromDate: string = constants.EARLIE
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = dateStringToNeo(fromDate);
@@ -682,7 +692,7 @@ export const voted = async (id: number, fromDate: string = constants.EARLIEST_FR
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = dateStringToNeo(fromDate);
@@ -713,7 +723,7 @@ export const votedAye = async (id: number, fromDate: string = constants.EARLIEST
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = dateStringToNeo(fromDate);
@@ -744,7 +754,7 @@ export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = dateStringToNeo(fromDate);
@@ -843,7 +853,7 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
 
         //set to date to today if not provided 
         if (!toDate) {
-            toDate = new Date().toISOString().substr(0, 10);
+            toDate = new Date().toISOString().substring(0, 10);
         }
 
         const fromDateValue = new Date(fromDate).getTime();
@@ -884,7 +894,7 @@ export const mostOrLeastVotingMps = async (partyName: string, category: string, 
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
@@ -920,7 +930,7 @@ export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string
 
     //set to date to today if not provided 
     if (!toDate) {
-        toDate = new Date().toISOString().substr(0, 10);
+        toDate = new Date().toISOString().substring(0, 10);
     }
 
     const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
