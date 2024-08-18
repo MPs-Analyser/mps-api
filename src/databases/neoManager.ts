@@ -464,7 +464,8 @@ export const queryContracts = async ({
     
         cypher = `
         ${commonQuery}
-        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, party.partyName AS \`Awarded by\`, c.AwardedValue AS value
+        WITH c, org, collect(party.partyName) AS awardedByParties, c.AwardedValue AS value
+        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value
         ORDER BY value DESC
         LIMIT toInteger($limit)`;
 
