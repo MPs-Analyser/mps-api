@@ -11,6 +11,8 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   const awardedBy = req?.query?.awardedBy || "Any Party";
 
+  const title = req?.query?.title || "Any";
+
   const contractFromDate = req?.query?.contractFromDate;
 
   const contractToDate= req?.query?.contractToDate;
@@ -22,7 +24,7 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
   let result;
 
   // @ts-ignore
-  result = await queryContracts({ awardedCount, orgName, awardedBy, limit, groupByContractCount, contractFromDate, contractToDate });
+  result = await queryContracts({ awardedCount, orgName, awardedBy, limit, groupByContractCount, contractFromDate, contractToDate, title });
 
 
   // @ts-ignore

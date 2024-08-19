@@ -420,7 +420,8 @@ export const queryContracts = async ({
     limit = 1000,
     groupByContractCount = false,
     contractFromDate = constants.EARLIEST_FROM_DATE,
-    contractToDate = new Date().toISOString().substring(0, 10)
+    contractToDate = new Date().toISOString().substring(0, 10),
+    title = "Any"
 }) => {
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -433,16 +434,18 @@ export const queryContracts = async ({
         awardedCount,
         contractFromDate,
         contractToDate,
+        title,
         limit        
     }
 
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
     WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
-      AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
-      AND org.Name <> ""
-      AND c.AwardedDate >= date($contractFromDate)
-      AND c.AwardedDate <= date($contractToDate)`
+    AND (toLower(c.Title) CONTAINS toLower($title) OR $title = "Any") 
+    AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
+    AND org.Name <> ""
+    AND c.AwardedDate >= date($contractFromDate)
+    AND c.AwardedDate <= date($contractToDate)`
 
     let result, cypher;
 
