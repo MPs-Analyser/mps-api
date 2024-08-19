@@ -411,8 +411,6 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     }
 }
 
-
-
 export const queryContracts = async ({
     awardedCount = 0,
     orgName = "Any",
@@ -424,6 +422,8 @@ export const queryContracts = async ({
     title = "Any"
 }) => {
 
+
+    console.log("title 2 ", title);
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
