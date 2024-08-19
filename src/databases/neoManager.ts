@@ -209,7 +209,7 @@ export const topXdonars = async ({ limit = 10 }) => {
            SUM(r.amount) AS totalDonationValue,
            COUNT(r) AS donationCount 
       RETURN 
-          d.donar AS donor,
+          d.Name AS donor,
           SIZE(uniquePartyNames) AS numberOfPartiesDonated,
           totalDonationValue,
           donationCount
@@ -301,7 +301,7 @@ export const queryDonation = async ({
         AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
         AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
         RETURN 
-        d.donar AS donor,
+        d.Name AS donor,
         totalDonationValue AS \`Donated Amount\`,     
         donationCount AS \`Donations Made\`,    
         uniquePartyNames AS \`Donated To\`     
@@ -336,9 +336,9 @@ export const getDonorDetails = async ({ donarName = "" }) => {
     const formattedName = escapeRegexSpecialChars(donarName);
 
     const cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
-    WHERE d.donar =~ '(?i).*${formattedName}.*'
+    WHERE d.Name =~ '(?i).*${formattedName}.*'
     RETURN 
-    d.donar as donar, 
+    d.Name as donar, 
     d.accountingUnitName as accountingUnitName, 
     d.postcode as postcode,
     d.donorStatus as donorStatus, 
@@ -369,7 +369,7 @@ export const getMultiPartyDonars = async () => {
     WITH d, COLLECT(DISTINCT p.partyName) AS uniquePartyNames
     WHERE SIZE(uniquePartyNames) > 1
     RETURN
-      d.donar AS donor,
+      d.Name AS donor,
       SIZE(uniquePartyNames) AS numberOfPartiesDonated,
       uniquePartyNames AS partyNames
     ORDER BY numberOfPartiesDonated DESC;
@@ -397,7 +397,7 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     WHERE (p.partyName = "${partyName}" OR "${partyName}" = "Any")
        RETURN
        p.partyName AS partyName,
-       d.donar as donar,
+       d.Name as donar,
        COUNT(r) AS donated,
        SUM(r.amount) AS totalDonationValue
        ORDER BY totalDonationValue DESC;
