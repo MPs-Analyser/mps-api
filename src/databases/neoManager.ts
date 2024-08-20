@@ -440,7 +440,7 @@ export const queryContracts = async ({
 
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-    WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
+    WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
     AND (toLower(c.Title) CONTAINS toLower($title) OR $title = "Any") 
     AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
     AND org.Name <> ""
