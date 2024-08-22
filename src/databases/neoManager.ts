@@ -443,7 +443,7 @@ export const queryContracts = async ({
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
     WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
-    AND (toLower(c.Category) CONTAINS toLower($industry) OR $industry = "Any")     
+    AND (ANY(category IN c.Categories WHERE toLower(category) CONTAINS toLower($industry)) OR $industry = "Any")   
     AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
     AND org.Name <> ""
     AND c.AwardedDate >= date($contractFromDate)
@@ -470,7 +470,7 @@ export const queryContracts = async ({
         cypher = `
         ${commonQuery}
         WITH c, org, collect(party.partyName) AS awardedByParties, c.AwardedValue AS value
-        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Industry As Industry, c.Category
+        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Industry As Industry, c.Categories
         ORDER BY value DESC
         LIMIT toInteger($limit)`;
 
