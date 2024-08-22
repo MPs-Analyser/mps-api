@@ -13,6 +13,8 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
 
   const title = req?.query?.contractName || "Any";
 
+  const industry = req?.query?.industry || "Any";
+
   const contractFromDate = req?.query?.contractFromDate;
 
   const contractToDate= req?.query?.contractToDate;
@@ -26,7 +28,7 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
   console.log("params ", title);  
 
   // @ts-ignore
-  result = await queryContracts({ awardedCount, orgName, awardedBy, limit, groupByContractCount, contractFromDate, contractToDate, title });
+  result = await queryContracts({ awardedCount, orgName, awardedBy, limit, groupByContractCount, contractFromDate, contractToDate, title, industry });
 
 
   // @ts-ignore
