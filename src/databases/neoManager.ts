@@ -119,7 +119,7 @@ function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType="Any" }) => {
+export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType="Any" }) => {
 
     logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 

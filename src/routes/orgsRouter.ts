@@ -8,7 +8,7 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   console.log('Get orgs ', req.query);
 
   // @ts-ignore
-  const name: string = req?.query?.name || "any";
+  const name: string = req?.query?.name || "Any";
 
   // @ts-ignore
   const awardedBy: string = req?.query?.awardedBy || "Any Party";
