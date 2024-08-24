@@ -1,35 +1,58 @@
 import express, { Request, Response } from 'express';
 import { getContractsAwardedByCount, getContractsforOrg, queryContracts, getContractDetails } from "../databases/neoManager";
 
+import { ParsedQs } from 'qs'; 
+
 const contractsRouter = express.Router();
+
+function getQueryParam(query: ParsedQs, paramName: string, defaultValue?: string | number | boolean): string | number | boolean | undefined {
+  const value = query[paramName];
+
+  if (typeof value === 'string') {
+    // Check for common boolean representations (case-insensitive)
+    if (value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'yes') {
+      return true;
+    } else if (value.toLowerCase() === 'false' || value === '0' || value.toLowerCase() === 'no') {
+      return false;
+    } else {
+      return value; // Return the string value if it's not a recognized boolean
+    }
+  } else if (typeof defaultValue === 'number' && typeof value !== 'undefined') {
+    return Number(value) || defaultValue; // Parse as number, or use default
+  } else {
+    return defaultValue; // Fallback to the default value or undefined
+  }
+}
 
 contractsRouter.get('/', async (req: Request, res: Response) => {
 
-  const awardedCount: number = Number(req?.query?.awardedCount) || 0;
-
-  const orgName = req?.query?.orgName || "Any";
-
-  const awardedBy = req?.query?.awardedBy || "Any Party";
-
-  const title = req?.query?.contractName || "Any";
-
-  const industry = req?.query?.industry || "Any";
-
-  const contractFromDate = req?.query?.contractFromDate;
-
-  const contractToDate= req?.query?.contractToDate;
-
-  const limit: number = Number(req?.query?.limit) || 1000;
-
-  const groupByContractCount: boolean = req?.query?.groupByContractCount === "true" ? true : false;
+  const awardedCount = getQueryParam(req.query, 'awardedCount', 0) as number;
+  const orgName = getQueryParam(req.query, 'orgName', "Any") as string;
+  const awardedBy = getQueryParam(req.query, 'awardedBy', "Any Party") as string;
+  const contractName = getQueryParam(req.query, 'contractName', "Any") as string;
+  const industry = getQueryParam(req.query, 'industry', "Any") as string;
+  const contractFromDate = getQueryParam(req.query, 'contractFromDate') as string | undefined;
+  const contractToDate = getQueryParam(req.query, 'contractToDate') as string | undefined;
+  const limit = getQueryParam(req.query, 'limit', 1000) as number;
+  const valueFrom = getQueryParam(req.query, 'valuefrom', 0) as number;
+  const valueTo = getQueryParam(req.query, 'valueto', 99999999999) as number;
+  const groupByContractCount = getQueryParam(req.query, 'groupByContractCount', false) as boolean;
 
   let result;
-
-  console.log("params ", title);  
-
-  // @ts-ignore
-  result = await queryContracts({ awardedCount, orgName, awardedBy, limit, groupByContractCount, contractFromDate, contractToDate, title, industry });
-
+  
+  result = await queryContracts({
+    awardedCount,
+    orgName,
+    awardedBy,
+    limit,
+    groupByContractCount,
+    contractFromDate,
+    contractToDate,
+    title: contractName, 
+    industry,
+    valueFrom,
+    valueTo
+  });
 
   // @ts-ignore
   if (result && result.records) {

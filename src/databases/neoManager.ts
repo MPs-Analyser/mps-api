@@ -411,6 +411,20 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
     }
 }
 
+interface QueryContractsParams {
+    awardedCount?: number;
+    orgName?: string; 
+    awardedBy?: string;
+    limit?: number;
+    groupByContractCount?: boolean;
+    contractFromDate?: string;
+    contractToDate?: string;
+    title?: string; 
+    industry?: string;
+    valueFrom?: number; 
+    valueTo?: number;
+  }
+
 export const queryContracts = async ({
     awardedCount = 0,
     orgName = "Any",
@@ -420,11 +434,12 @@ export const queryContracts = async ({
     contractFromDate = constants.EARLIEST_FROM_DATE,
     contractToDate = new Date().toISOString().substring(0, 10),
     title = "Any",
-    industry= "Any"
-}) => {
+    industry= "Any",
+    valueFrom = 0,
+    valueTo =9999999999
+} :QueryContractsParams) => {
 
-
-    console.log("title 2 ", title);
+    
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
@@ -437,6 +452,8 @@ export const queryContracts = async ({
         contractToDate,
         title,
         industry,
+        valueFrom,
+        valueTo,
         limit        
     }
 
@@ -447,7 +464,9 @@ export const queryContracts = async ({
     AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
     AND org.Name <> ""
     AND c.AwardedDate >= date($contractFromDate)
-    AND c.AwardedDate <= date($contractToDate)`
+    AND c.AwardedDate <= date($contractToDate)
+    AND c.AwardedValue >= toInteger($valueFrom)
+    AND c.AwardedValue <= toInteger($valueTo)`
 
     let result, cypher;
 
@@ -458,7 +477,7 @@ export const queryContracts = async ({
         cypher = `
         ${commonQuery}
         WITH org, COUNT(c) AS contractCount
-        WHERE contractCount > $awardedCount
+        WHERE contractCount > toInteger($awardedCount)
         RETURN org.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`
         ORDER BY contractCount DESC 
         LIMIT toInteger($limit)`;
