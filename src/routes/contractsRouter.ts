@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
-import { getContractsAwardedByCount, getContractsforOrg, queryContracts, getContractDetails } from "../databases/neoManager";
+import { queryContracts, getContractDetails } from "../databases/neoManager";
 
 import { ParsedQs } from 'qs'; 
 
 const contractsRouter = express.Router();
 
-function getQueryParam(query: ParsedQs, paramName: string, defaultValue?: string | number | boolean): string | number | boolean | undefined {
+const getQueryParam = (query: ParsedQs, paramName: string, defaultValue?: string | number | boolean): string | number | boolean | undefined => {
   const value = query[paramName];
 
   if (typeof value === 'string') {

@@ -119,7 +119,7 @@ function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10 }) => {
+export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType="Any" }) => {
 
     logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 
@@ -137,14 +137,24 @@ export const queryOrgsAndIndividuals = async ({ name = "any", awardedBy = "Any P
     }; // Create a params object
 
     if (awardedBy === "Any Party" && donatedTo === "Any Party") {
-        logger.info("Query just org details");
+        logger.info("Query just org or individual details");
 
-        cypher = `MATCH (org)
-        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
-        AND org.Name <> ""
-        RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
-        ORDER BY org.Name
-        LIMIT toInteger($limit)`;
+        if (orgType === "Any") {
+            cypher = `MATCH (org)
+            WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
+            AND org.Name <> ""
+            RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
+            ORDER BY org.Name
+            LIMIT toInteger($limit)`;
+        } else { //query just individual or organisation types 
+            cypher = `MATCH (org:${orgType})
+            WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
+            AND org.Name <> ""
+            RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
+            ORDER BY org.Name
+            LIMIT toInteger($limit)`;
+        }
+        
 
     } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") {
         logger.info("Query org details for contract awarded but not donations");
@@ -436,7 +446,7 @@ export const queryContracts = async ({
     title = "Any",
     industry= "Any",
     valueFrom = 0,
-    valueTo =9999999999
+    valueTo = 9999999999
 } :QueryContractsParams) => {
 
     
