@@ -120,7 +120,7 @@ function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const querySimilarNames = async (name: string) => {
+export const querySimilarNames = async (shortName: string, name: string) => {
 
     logger.debug(`Query similar names to  ${name}`);
 
@@ -129,10 +129,10 @@ export const querySimilarNames = async (name: string) => {
     driver = setDriver();
     const session = driver.session();
 
-    let params = { name }
+    let params = { shortName, name }
 
     let cypher = `MATCH (c:Organisation)
-    WHERE c.Name CONTAINS $name
+    WHERE c.Name CONTAINS $shortName
     OR apoc.text.levenshteinDistance(c.Name, $name) < 7
     RETURN c.Name, c.accountingUnitName AS \`Accounting Unit\`, c.postcode, c.hasHadContract
     ORDER BY apoc.text.levenshteinDistance(c.Name, $name)
