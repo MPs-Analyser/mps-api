@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
-import { queryOrgsAndIndividuals, queryDonation } from "../databases/neoManager";
+import { queryOrgsAndIndividuals, queryDonation, querySimilarNames } from "../databases/neoManager";
+import { standardizeCompanyName } from "../utils/companyUtils";
 
 const orgsRouter = express.Router();
 
@@ -29,21 +30,37 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
 
   if (minTotalDonationValue || minContractCount) {
     //@ts-ignore
-    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, donatedTo, awardedBy, minContractCount, orgType });    
+    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, donatedTo, awardedBy, minContractCount, orgType });
   } else {
     //@ts-ignore
     result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit, orgType });
   }
-
 
   if (result?.records) {
     res.json(result.records);
   } else {
     res.json([]);
   }
-
-
 });
 
+orgsRouter.get('/similar', async (req: Request, res: Response) => {
+
+  console.log("step 1");
+  
+  //@ts-ignore
+  const name: string = req?.query?.name;
+
+  console.log('Find similar names to ', name); 
+  const result = []
+  if (name) {
+    // const standardised = standardizeCompanyName(name);
+
+    const names = await querySimilarNames(name)
+    
+    res.json(names.records);
+  } else {
+    res.json([]);
+  }
+});
 
 export default orgsRouter;

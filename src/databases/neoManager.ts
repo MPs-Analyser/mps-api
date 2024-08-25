@@ -4,6 +4,7 @@ import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
 import { cyphers } from "./cyphers";
 import { constants } from "../constants";
+import { P } from 'pino';
 
 const logger = require('../logger');
 
@@ -119,7 +120,33 @@ function escapeRegexSpecialChars(text: string) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType="Any" }) => {
+export const querySimilarNames = async (name: string) => {
+
+    logger.debug(`Query similar names to  ${name}`);
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+    let params = { name }
+
+    let cypher = `MATCH (c:Organisation)
+    WHERE c.Name CONTAINS $name
+    OR apoc.text.levenshteinDistance(c.Name, $name) < 5
+    RETURN c.Name, c.accountingUnitName AS \`Accounting Unit\`, c.postcode, c.hasHadContract
+    ORDER BY apoc.text.levenshteinDistance(c.Name, $name)`
+
+    try {
+        const result = await runCypherWithParams(cypher, session, params); 
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType = "Any" }) => {
 
     logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 
@@ -154,7 +181,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
             ORDER BY org.Name
             LIMIT toInteger($limit)`;
         }
-        
+
 
     } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") {
         logger.info("Query org details for contract awarded but not donations");
@@ -423,17 +450,17 @@ export const getDonorsForParty = async ({ partyName = "Any" }) => {
 
 interface QueryContractsParams {
     awardedCount?: number;
-    orgName?: string; 
+    orgName?: string;
     awardedBy?: string;
     limit?: number;
     groupByContractCount?: boolean;
     contractFromDate?: string;
     contractToDate?: string;
-    title?: string; 
+    title?: string;
     industry?: string;
-    valueFrom?: number; 
+    valueFrom?: number;
     valueTo?: number;
-  }
+}
 
 export const queryContracts = async ({
     awardedCount = 0,
@@ -444,17 +471,17 @@ export const queryContracts = async ({
     contractFromDate = constants.EARLIEST_FROM_DATE,
     contractToDate = new Date().toISOString().substring(0, 10),
     title = "Any",
-    industry= "Any",
+    industry = "Any",
     valueFrom = 0,
     valueTo = 9999999999
-} :QueryContractsParams) => {
+}: QueryContractsParams) => {
 
-    
+
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
-    const params = { 
+    const params = {
         orgName,
         awardedBy,
         awardedCount,
@@ -464,7 +491,7 @@ export const queryContracts = async ({
         industry,
         valueFrom,
         valueTo,
-        limit        
+        limit
     }
 
     const commonQuery = `
@@ -495,7 +522,7 @@ export const queryContracts = async ({
     } else {
 
         logger.debug('queryContracts no group by');
-    
+
         cypher = `
         ${commonQuery}
         WITH c, org, collect(party.partyName) AS awardedByParties, c.AwardedValue AS value
