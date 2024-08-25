@@ -306,7 +306,7 @@ export const queryDonation = async ({
         COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
         SUM(r.amount) AS totalDonationValue,
         COUNT(r) AS donationCount 
-        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
+        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any") 
         AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
         AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
         AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
