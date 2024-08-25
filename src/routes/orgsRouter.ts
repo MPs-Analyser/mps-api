@@ -57,11 +57,12 @@ orgsRouter.get('/similar', async (req: Request, res: Response) => {
   const result = []
   if (name) {
     const shortName = standardizeCompanyName(name);
+    const lowerName = name.toLowerCase();
     let names;
     if (similarityType === "jaro") {
-      names = await jaroWinklerSimilarity(shortName, name)
+      names = await jaroWinklerSimilarity(shortName, lowerName)
     } else {
-      names = await querySimilarNames(shortName, name)
+      names = await querySimilarNames(shortName, lowerName)
     }        
     res.json(names.records);
   } else {
