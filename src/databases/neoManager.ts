@@ -140,7 +140,37 @@ export const querySimilarNames = async (shortName: string, name: string) => {
     `
 
     try {
-        const result = await runCypherWithParams(cypher, session, params); 
+        const result = await runCypherWithParams(cypher, session, params);
+        return result;
+    } finally {
+        session.close();
+    }
+
+}
+
+
+export const jaroWinklerSimilarity = async (shortName: string, name: string) => {
+
+    logger.debug(`Query JARO similar names to  ${name}`);
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+
+    driver = setDriver();
+    const session = driver.session();
+
+    let params = { shortName, name }
+
+    let cypher = `
+    MATCH (c:Organisation)
+    WHERE c.Name CONTAINS $shortName
+    OR apoc.text.jaroWinklerDistance(c.Name, $name) < 0.15 
+    RETURN c.Name, c.accountingUnitName AS \`Accounting Unit\`, c.postcode, c.hasHadContract
+    ORDER BY apoc.text.jaroWinklerDistance(c.Name, $name) 
+    LIMIT 100
+    `
+
+    try {
+        const result = await runCypherWithParams(cypher, session, params);
         return result;
     } finally {
         session.close();

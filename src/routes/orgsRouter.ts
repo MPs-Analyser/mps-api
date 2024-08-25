@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { queryOrgsAndIndividuals, queryDonation, querySimilarNames } from "../databases/neoManager";
+import { queryOrgsAndIndividuals, queryDonation, querySimilarNames, jaroWinklerSimilarity } from "../databases/neoManager";
 import { standardizeCompanyName } from "../utils/companyUtils";
 
 const orgsRouter = express.Router();
@@ -50,13 +50,19 @@ orgsRouter.get('/similar', async (req: Request, res: Response) => {
   //@ts-ignore
   const name: string = req?.query?.name;
 
+  //@ts-ignore
+  const similarityType: string = req?.query?.type;
+
   console.log('Find similar names to ', name); 
   const result = []
   if (name) {
     const shortName = standardizeCompanyName(name);
-
-    const names = await querySimilarNames(shortName, name)
-    
+    let names;
+    if (similarityType === "jaro") {
+      names = await jaroWinklerSimilarity(shortName, name)
+    } else {
+      names = await querySimilarNames(shortName, name)
+    }        
     res.json(names.records);
   } else {
     res.json([]);
