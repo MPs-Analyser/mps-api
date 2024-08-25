@@ -133,9 +133,11 @@ export const querySimilarNames = async (name: string) => {
 
     let cypher = `MATCH (c:Organisation)
     WHERE c.Name CONTAINS $name
-    OR apoc.text.levenshteinDistance(c.Name, $name) < 5
+    OR apoc.text.levenshteinDistance(c.Name, $name) < 7
     RETURN c.Name, c.accountingUnitName AS \`Accounting Unit\`, c.postcode, c.hasHadContract
-    ORDER BY apoc.text.levenshteinDistance(c.Name, $name)`
+    ORDER BY apoc.text.levenshteinDistance(c.Name, $name)
+    LIMIT 100
+    `
 
     try {
         const result = await runCypherWithParams(cypher, session, params); 

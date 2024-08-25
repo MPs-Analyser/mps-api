@@ -53,9 +53,9 @@ orgsRouter.get('/similar', async (req: Request, res: Response) => {
   console.log('Find similar names to ', name); 
   const result = []
   if (name) {
-    // const standardised = standardizeCompanyName(name);
+    const standardised = standardizeCompanyName(name);
 
-    const names = await querySimilarNames(name)
+    const names = await querySimilarNames(standardised)
     
     res.json(names.records);
   } else {
