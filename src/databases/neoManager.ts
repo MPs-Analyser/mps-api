@@ -249,7 +249,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
         logger.info("Query org details for donations AND contracts awarded");
 
         cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE (org.Name =~ '(?i).*$name.*' OR $name = "any")
+        WHERE (org.Name =~ '(?i).*$name.*' OR $name = "Any")
         AND (party.partyName = $donatedTo or $donatedTo = "Any Party")
         WITH org, party, collect(c) AS contracts
         UNWIND contracts AS c
@@ -301,7 +301,7 @@ export const topXdonars = async ({ limit = 10 }) => {
 
 export const queryDonation = async ({
     limit = 10,
-    donarName = "any",
+    donarName = "Any",
     minNumberOfPartiesDonated = 0,
     minTotalDonationValue = 0,
     minDonationCount = 0,
@@ -330,7 +330,7 @@ export const queryDonation = async ({
         cypher = `
         MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
         WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
-        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "any") 
+        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any") 
         WITH d, p, r, collect(c) AS contracts
         WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
         WHERE contractCount > $minContractCount
