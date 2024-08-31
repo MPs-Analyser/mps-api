@@ -3,7 +3,7 @@ export const standardizeCompanyName = (name: string): string => {
   
     // standardized = standardized.replace(/[^\w\s]/g, '');
   
-    const stopWords = ['the', 'inc', 'ltd', 'plc', 'corp', 'llc', "service", "services", "industrial", "industry", "uk", "partners", "partner"];
+    const stopWords = ['the', 'inc', 'ltd', 'plc', 'corp', 'llc', "service", "services", "industrial", "industry", "uk", "partners", "partner", "and"];
 
     const words = standardized.split(/\s+/);
 

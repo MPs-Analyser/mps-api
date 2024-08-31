@@ -132,8 +132,9 @@ export const querySimilarNames = async (shortName: string, name: string) => {
     let params = { shortName, name }
 
     let cypher = `MATCH (c)
-    WHERE c.Name CONTAINS $shortName    
-    OR ANY(label IN labels(c) WHERE label IN ['Organisation', 'Individual'] AND apoc.text.levenshteinDistance(c.Name, $name) < 5)
+    WHERE (c.Name CONTAINS $shortName
+    OR ANY(label IN labels(c) WHERE label IN ['Organisation', 'Individual'] AND apoc.text.levenshteinDistance(c.Name, $name) < 3))
+    AND c.Name <> $name
     RETURN c.Name, c.accountingUnitName AS \`Accounting Unit\`, c.postcode, c.hasHadContract
     ORDER BY apoc.text.levenshteinDistance(c.Name, $name)
     LIMIT 100
