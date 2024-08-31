@@ -179,7 +179,7 @@ export const jaroWinklerSimilarity = async (shortName: string, name: string) => 
 
 }
 
-export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType = "Any" }) => {
+export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any Party", donatedTo = "Any Party", limit = 10, orgType = "Any", matchType = "partial" }) => {
 
     logger.debug(`Query orgs and individuals no numeric checks for ${name} ${awardedBy} ${donatedTo}`);
 
@@ -188,7 +188,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
     driver = setDriver();
     const session = driver.session();
 
-    let cypher;
+    let cypher ="";
     let params = {
         name: escapeRegexSpecialChars(name),
         awardedBy: escapeRegexSpecialChars(awardedBy),
@@ -197,67 +197,127 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
     }; // Create a params object
 
     if (awardedBy === "Any Party" && donatedTo === "Any Party") {
-        logger.info("Query just org or individual details");
 
         if (orgType === "Any") {
-            cypher = `MATCH (org)
-            WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
-            AND org.Name <> ""
+
+            let matchCondition;
+            if (matchType === "whole") {
+
+                logger.info("q1 Query just org or individual details whole word match ");
+
+                matchCondition = `
+                (toLower(org.Name) CONTAINS toLower(' ${name} ') 
+                 OR toLower(org.Name) STARTS WITH toLower('${name} ')
+                 OR toLower(org.Name) ENDS WITH toLower(' ${name}') 
+                 OR '${name}' = "Any")`;
+            } else {
+                logger.info("q2 Query just org or individual details parital word match ");
+                matchCondition = `toLower(org.Name) CONTAINS toLower('${name}') OR '${name}' = "Any"`;
+            }
+
+            cypher = `
+            MATCH (org)
+            WHERE ${matchCondition}
+              AND org.Name <> ""
             RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
             ORDER BY org.Name
             LIMIT toInteger($limit)`;
+
+
         } else { //query just individual or organisation types 
-            cypher = `MATCH (org:${orgType})
-            WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
-            AND org.Name <> ""
-            RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
-            ORDER BY org.Name
-            LIMIT toInteger($limit)`;
+
+            let matchCondition;
+
+            if (matchType === "whole") {
+
+                logger.info("q3 Query specific org or individual type whole word match");
+                // Whole word match conditions
+                matchCondition = `
+                (toLower(org.Name) CONTAINS toLower(' ${name} ') 
+                 OR toLower(org.Name) STARTS WITH toLower('${name} ')
+                 OR toLower(org.Name) ENDS WITH toLower(' ${name}') 
+                 OR '${name}' = "Any")
+              `;
+            } else {
+                logger.info("q4 Query specific org or individual type partial word match");
+                // Partial word match condition
+                matchCondition = `toLower(org.Name) CONTAINS toLower('${name}') OR '${name}' = "Any"`;
+            }
+
+            cypher = `
+              MATCH (org:${orgType})
+              WHERE ${matchCondition}
+                AND org.Name <> ""
+              RETURN org.Name, org.donorStatus AS type, org.accountingUnitName AS accounting, org.postcode AS \`Post Code\`
+              ORDER BY org.Name
+              LIMIT toInteger($limit)
+            `;
+
         }
 
 
-    } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") {
-        logger.info("Query org details for contract awarded but not donations");
+    } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") { //CONTRACTS RECIEVED
 
-        cypher = `
-        MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
-        AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
-        WITH org, COUNT(c) AS contractCount        
-        WHERE (toLower(org.Name) CONTAINS toLower($name) OR $name = "Any")
-        RETURN org.Name AS \`Awarded to\`, contractCount
-        ORDER BY contractCount DESC
-        LIMIT toInteger($limit)`;
+        logger.info("CONTRACTS RECIEVED NEVER CALLED");
+
+        // let matchCondition;
+
+        // if (matchType === "whole") {
+        //   // Whole word match conditions
+        //   matchCondition = `
+        //     (toLower(org.Name) CONTAINS toLower(' ${name} ') 
+        //      OR toLower(org.Name) STARTS WITH toLower('${name} ')
+        //      OR toLower(org.Name) ENDS WITH toLower(' ${name}') 
+        //      OR '${name}' = "Any")
+        //   `;
+        // } else {
+        //   // Partial word match condition
+        //   matchCondition = `toLower(org.Name) CONTAINS toLower('${name}') OR '${name}' = "Any"`;
+        // }
+      
+        // cypher = `
+        //   MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
+        //   WHERE ${matchCondition}
+        //   AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
+        //   WITH org, COUNT(c) AS contractCount
+        //   WHERE ${matchCondition} // Apply the same match condition again after aggregation
+        //   RETURN org.Name AS \`Awarded to\`, contractCount
+        //   ORDER BY contractCount DESC
+        //   LIMIT toInteger($limit)
+        // `;
 
     } else if (awardedBy === "Any Party" && donatedTo !== "Any Party") {
-        logger.info("Query org details for donations but not contracts awarded");
 
-        cypher = `
-        MATCH (d)-[r:DONATED_TO]-(p:Party)
-        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any")
-        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
-        AND d.Name <> ""
-          RETURN
-          d.Name as name,
-          p.partyName AS \`Donated To\`,        
-          COUNT(r) AS \`Donated Count\`,
-          SUM(r.amount) AS \`Total Value\`
-          ORDER BY SUM(r.amount) DESC
-          LIMIT toInteger($limit)`;
+        logger.info("DONATIONS MADE NEVER CALLED");
+        // logger.info("Query org details for donations but not contracts awarded");
+
+        // cypher = `
+        // MATCH (d)-[r:DONATED_TO]-(p:Party)
+        // WHERE (p.partyName = $donatedTo OR $donatedTo = "Any")
+        // AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
+        // AND d.Name <> ""
+        //   RETURN
+        //   d.Name as name,
+        //   p.partyName AS \`Donated To\`,        
+        //   COUNT(r) AS \`Donated Count\`,
+        //   SUM(r.amount) AS \`Total Value\`
+        //   ORDER BY SUM(r.amount) DESC
+        //   LIMIT toInteger($limit)`;
 
     } else {
         //TODO not done this one properly yet 
-        logger.info("Query org details for donations AND contracts awarded");
+        // logger.info("Query org details for donations AND contracts awarded");
+        logger.info("CONTRACTS RECIEVED AND DONATIONS MADE NEVER CALLED");
 
-        cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        WHERE (org.Name =~ '(?i).*$name.*' OR $name = "Any")
-        AND (party.partyName = $donatedTo or $donatedTo = "Any Party")
-        WITH org, party, collect(c) AS contracts
-        UNWIND contracts AS c
-        WITH org, party, c ORDER BY c.AwardedDate DESC
-        WITH org.Name AS name, party.partyName AS donatedTo, party.partyName AS awardedBy, c.Title AS title, collect(c.AwardedDate) AS awardedDates
-        RETURN name, donatedTo, awardedBy, title, head(awardedDates) AS date
-        LIMIT toInteger($limit)`;
+        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
+        // WHERE (org.Name =~ '(?i).*$name.*' OR $name = "Any")
+        // AND (party.partyName = $donatedTo or $donatedTo = "Any Party")
+        // WITH org, party, collect(c) AS contracts
+        // UNWIND contracts AS c
+        // WITH org, party, c ORDER BY c.AwardedDate DESC
+        // WITH org.Name AS name, party.partyName AS donatedTo, party.partyName AS awardedBy, c.Title AS title, collect(c.AwardedDate) AS awardedDates
+        // RETURN name, donatedTo, awardedBy, title, head(awardedDates) AS date
+        // LIMIT toInteger($limit)`;
     }
 
     try {
@@ -308,7 +368,8 @@ export const queryDonation = async ({
     minDonationCount = 0,
     donatedTo = "Any Party",
     awardedBy = "Any Party",
-    minContractCount = 0
+    minContractCount = 0,
+    matchType = "partial"
 }) => {
 
     const formattedName = escapeRegexSpecialChars(donarName);
@@ -328,56 +389,102 @@ export const queryDonation = async ({
     if (minContractCount && minTotalDonationValue) { //contracts awarded to org by party they donated to
         logger.debug("q1: contracts awarded to org by party they donated to");
 
+        let matchCondition;
+
+        if (matchType === "whole") {
+          // Whole word match conditions
+          matchCondition = `
+            (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
+             OR toLower(d.Name) STARTS WITH toLower('${formattedName} ' )
+             OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}') 
+             OR $name = "Any")
+          `;
+        } else {
+          // Partial word match condition
+          matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+        }
+        
         cypher = `
-        MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
-        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
-        AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any") 
-        WITH d, p, r, collect(c) AS contracts
-        WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
-        WHERE contractCount > $minContractCount
-        RETURN name, donatedTo AS \`Donated to\`, totalDonationValue AS \`Donation Value\`, donationCount, awardedBy AS \`Awarded Contract by\`, contractCount AS \`Contracts awarded\`
-        ORDER BY name
-        LIMIT toInteger($limit)        
-        `
+          MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
+          WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
+            AND ${matchCondition} 
+          WITH d, p, r, collect(c) AS contracts
+          WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
+          WHERE contractCount > $minContractCount
+          RETURN name, donatedTo AS \`Donated to\`, totalDonationValue AS \`Donation Value\`, donationCount, awardedBy AS \`Awarded Contract by\`, contractCount AS \`Contracts awarded\`
+          ORDER BY name
+          LIMIT toInteger($limit)
+        `;
+
     } else if (minContractCount && !minTotalDonationValue) { //min contracts recieved by org but not interested in 
 
         logger.debug("q2: min contracts recieved by org but not interested in ");
 
-        cypher = `
-        MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
-        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
-        AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
-        AND d.Name <> ""
-        WITH d, COUNT(c) AS contractCount, toInteger(SUM(c.AwardedValue)) AS awardedValue
-        WHERE contractCount > $minContractCount
-        RETURN d.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`, awardedValue AS \`Awarded Value\`
-        ORDER BY contractCount DESC 
-        LIMIT toInteger($limit)
-        `;
+        let matchCondition;
 
+        if (matchType === "whole") {
+          // Whole word match conditions
+          matchCondition = `
+            (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
+             OR toLower(d.Name) STARTS WITH toLower('${formattedName} ')
+             OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}') 
+             OR '$name' = "Any")
+          `;
+        } else {
+          // Partial word match condition
+          matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+        }
+      
+        cypher = `
+          MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
+          WHERE ${matchCondition}
+            AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
+            AND d.Name <> ""
+          WITH d, COUNT(c) AS contractCount, toInteger(SUM(c.AwardedValue)) AS awardedValue
+          WHERE contractCount > $minContractCount
+          RETURN d.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`, awardedValue AS \`Awarded Value\`
+          ORDER BY contractCount DESC 
+          LIMIT toInteger($limit)
+        `;
+      
 
     } else { //donations made to party 
         logger.debug("q3: donations made to party ");
 
+        let matchCondition;
+
+        if (matchType === "whole") {
+          // Whole word match conditions
+          matchCondition = `
+            (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
+             OR toLower(d.Name) STARTS WITH toLower('${formattedName} ') 
+             OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}'))
+          `;
+        } else {
+          // Partial word match condition
+          matchCondition = `toLower(d.Name) CONTAINS toLower($name)`;
+        }
+
         cypher = `
-        MATCH (d)-[r:DONATED_TO]->(p:Party)     
-        WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
-        WITH d, 
-        COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
-        SUM(r.amount) AS totalDonationValue,
-        COUNT(r) AS donationCount 
-        WHERE (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any") 
-        AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
-        AND (donationCount >= $minDonationCount OR $minDonationCount = 0)             
-        AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
-        RETURN 
-        d.Name AS donor,
-        totalDonationValue AS \`Donated Amount\`,     
-        donationCount AS \`Donations Made\`,    
-        uniquePartyNames AS \`Donated To\`     
-        ORDER BY totalDonationValue DESC
-        LIMIT toInteger($limit)
-       `
+          MATCH (d)-[r:DONATED_TO]->(p:Party)
+          WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
+          WITH d,
+          COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
+          SUM(r.amount) AS totalDonationValue,
+          COUNT(r) AS donationCount
+          WHERE ${matchCondition}
+          AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
+          AND (donationCount >= $minDonationCount OR $minDonationCount = 0)        
+          AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
+          RETURN 
+          d.Name AS donor,
+          totalDonationValue AS \`Donated Amount\`,
+          donationCount AS \`Donations Made\`,
+          uniquePartyNames AS \`Donated To\`
+          ORDER BY totalDonationValue DESC
+          LIMIT toInteger($limit)
+        `;
+      
     }
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -559,7 +666,7 @@ export const queryContracts = async ({
         cypher = `
         ${commonQuery}
         WITH c, org, collect(party.partyName) AS awardedByParties, c.AwardedValue AS value
-        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Industry As Industry, c.Categories AS Categories
+        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Categories AS Categories
         ORDER BY value DESC
         LIMIT toInteger($limit)`;
 
@@ -581,7 +688,7 @@ const runCypherWithParams = async (cypher: string, session: any, params: object)
         return typeof value === 'string' ? `'${value}'` : value;
     });
 
-    logger.debug(`Final Cypher Query:\n${logQuery}`);
+    logger.debug(logQuery)
 
     try {
         const result = await session.run(cypher, params);

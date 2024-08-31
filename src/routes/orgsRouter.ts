@@ -15,7 +15,10 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   const awardedBy: string = req?.query?.awardedBy || "Any Party";
 
   // @ts-ignore
-  const donatedTo: string = req?.query?.donatedTo || "Any Party";;
+  const donatedTo: string = req?.query?.donatedTo || "Any Party";
+
+  // @ts-ignore
+  const matchType: string = req?.query?.matchtype || "partial";
 
   const limit: number = Number(req?.query?.limit || 10);
 
@@ -28,12 +31,13 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
 
   let result;
 
-  if (minTotalDonationValue || minContractCount) {
+  //TODO check this.  Only callings the orgs query if we are not asking about donations or contracts awarded. In that case we are doing donation queries
+  if (minTotalDonationValue || minContractCount || donatedTo !== "Any Party" || awardedBy !== "Any Party") {
     //@ts-ignore
-    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, donatedTo, awardedBy, minContractCount, orgType });
+    result = await queryDonation({ donarName: name, limit, minDonationCount, minNumberOfPartiesDonated, minTotalDonationValue, donatedTo, awardedBy, minContractCount, orgType, matchType });
   } else {
     //@ts-ignore
-    result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit, orgType });
+    result = await queryOrgsAndIndividuals({ name, awardedBy, donatedTo, limit, orgType, matchType });
   }
 
   if (result?.records) {
