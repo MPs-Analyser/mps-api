@@ -188,7 +188,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
     driver = setDriver();
     const session = driver.session();
 
-    let cypher ="";
+    let cypher = "";
     let params = {
         name: escapeRegexSpecialChars(name),
         awardedBy: escapeRegexSpecialChars(awardedBy),
@@ -274,7 +274,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
         //   // Partial word match condition
         //   matchCondition = `toLower(org.Name) CONTAINS toLower('${name}') OR '${name}' = "Any"`;
         // }
-      
+
         // cypher = `
         //   MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
         //   WHERE ${matchCondition}
@@ -392,18 +392,18 @@ export const queryDonation = async ({
         let matchCondition;
 
         if (matchType === "whole") {
-          // Whole word match conditions
-          matchCondition = `
+            // Whole word match conditions
+            matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
              OR toLower(d.Name) STARTS WITH toLower('${formattedName} ' )
              OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}') 
              OR $name = "Any")
           `;
         } else {
-          // Partial word match condition
-          matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+            // Partial word match condition
+            matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
         }
-        
+
         cypher = `
           MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
           WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
@@ -423,18 +423,18 @@ export const queryDonation = async ({
         let matchCondition;
 
         if (matchType === "whole") {
-          // Whole word match conditions
-          matchCondition = `
+            // Whole word match conditions
+            matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
              OR toLower(d.Name) STARTS WITH toLower('${formattedName} ')
              OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}') 
              OR '$name' = "Any")
           `;
         } else {
-          // Partial word match condition
-          matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+            // Partial word match condition
+            matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
         }
-      
+
         cypher = `
           MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
           WHERE ${matchCondition}
@@ -446,7 +446,7 @@ export const queryDonation = async ({
           ORDER BY contractCount DESC 
           LIMIT toInteger($limit)
         `;
-      
+
 
     } else { //donations made to party 
         logger.debug("q3: donations made to party ");
@@ -454,15 +454,15 @@ export const queryDonation = async ({
         let matchCondition;
 
         if (matchType === "whole") {
-          // Whole word match conditions
-          matchCondition = `
+            // Whole word match conditions
+            matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
              OR toLower(d.Name) STARTS WITH toLower('${formattedName} ') 
              OR toLower(d.Name) ENDS WITH toLower(' ${formattedName}'))
           `;
         } else {
-          // Partial word match condition
-          matchCondition = `toLower(d.Name) CONTAINS toLower($name)`;
+            // Partial word match condition
+            matchCondition = `toLower(d.Name) CONTAINS toLower($name)`;
         }
 
         cypher = `
@@ -484,7 +484,7 @@ export const queryDonation = async ({
           ORDER BY totalDonationValue DESC
           LIMIT toInteger($limit)
         `;
-      
+
     }
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
@@ -600,6 +600,7 @@ interface QueryContractsParams {
     industry?: string;
     valueFrom?: number;
     valueTo?: number;
+    matchType: string;
 }
 
 export const queryContracts = async ({
@@ -613,7 +614,8 @@ export const queryContracts = async ({
     title = "Any",
     industry = "Any",
     valueFrom = 0,
-    valueTo = 9999999999
+    valueTo = 9999999999,
+    matchType = "partial"
 }: QueryContractsParams) => {
 
 
@@ -631,7 +633,15 @@ export const queryContracts = async ({
         industry,
         valueFrom,
         valueTo,
+        matchType,
         limit
+    }
+
+    let titleMatchCondition;
+    if (matchType === "whole") {
+        titleMatchCondition = `(toLower(c.Title) =~ ('\\b' + toLower($title) + '\\b') OR toLower(c.Title) STARTS WITH toLower($title) OR toLower(c.Title) ENDS WITH toLower($title) OR $title = "Any")`;
+    } else {
+        titleMatchCondition = `(toLower(c.Title) CONTAINS toLower($title) OR $title = "Any")`;
     }
 
     const commonQuery = `
@@ -643,7 +653,8 @@ export const queryContracts = async ({
     AND c.AwardedDate >= date($contractFromDate)
     AND c.AwardedDate <= date($contractToDate)
     AND c.AwardedValue >= toInteger($valueFrom)
-    AND c.AwardedValue <= toInteger($valueTo)`
+    AND c.AwardedValue <= toInteger($valueTo)
+    AND ${titleMatchCondition}`;
 
     let result, cypher;
 
@@ -745,36 +756,6 @@ export const getContractDetails = async ({ value = 0, title = "", supplier = "" 
         session.close();
     }
 
-}
-
-export const getContractsforOrg = async ({ orgName = "", limit = 1000 }) => {
-
-    logger.debug('getContractsAwardedByCount');
-
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-
-    driver = setDriver();
-    const session = driver.session();
-
-    const cypher = `
-    MATCH (org:Organisation)-[:AWARDED]-(con:Contract)-[:TENDERED]-(party:Party)
-    WHERE toLower(org.Name) CONTAINS toLower("${orgName}")
-    RETURN 
-        party.partyName AS Awarded_By,
-        con.AwardedDate AS Awarded_Date,
-        con.Title AS Contract_Title,
-        con.AwardedValue AS Awarded_Value,        
-        con.Description AS Contract_Description,
-        con.Link AS Contract_Link       
-        LIMIT ${limit}
-    `
-
-    try {
-        const result = await runCypher(cypher, session);
-        return result;
-    } finally {
-        session.close();
-    }
 }
 
 export const getDonationSummary = async () => {
@@ -1092,94 +1073,153 @@ export const votingSimilarityFiltered = async (id: number, partyName: string, li
     }
 }
 
-export const mostOrLeastVotingMps = async (partyName: string, category: string, partyOperator: string = "=", limit: number = 40, orderBy: string = "DESC", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
+interface MostOrLeastVotingMpsParams {
+    partyName: string;
+    category: string;
+    partyOperator?: string; // Optional with default value
+    limit?: number; // Optional with default value
+    orderBy?: string; // Optional with default value
+    fromDate?: string; // Optional with default value
+    toDate?: string; // Optional 
+    name?: string; // Optional with default value
+    matchType?: string; // Optional with default value
+}
 
-    //set to date to today if not provided 
-    if (!toDate) {
-        toDate = new Date().toISOString().substring(0, 10);
+export const mostOrLeastVotingMps = async ({
+    partyName,
+    category,
+    partyOperator = "=",
+    limit = 40,
+    orderBy = "DESC",
+    fromDate = constants.EARLIEST_FROM_DATE,
+    toDate = new Date().toISOString().substring(0, 10),
+    name = "Any",
+    matchType = "partial"
+}: MostOrLeastVotingMpsParams) => {
+
+    logger.debug("q:10 query mps");
+
+    let nameMatchCondition;
+    if (matchType === "whole") {    
+        nameMatchCondition = `(    
+        toLower(mp.nameDisplayAs) CONTAINS toLower(' ${name} ') 
+        OR toLower(mp.nameDisplayAs) STARTS WITH toLower('${name} ') 
+        OR toLower(mp.nameDisplayAs) ENDS WITH toLower(' ${name}')
+        OR $name = "Any")`;
+    } else {
+        nameMatchCondition = `(toLower(mp.nameDisplayAs) CONTAINS toLower($name) OR $name = "Any")`;
     }
 
-    const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
-    const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
+    const cypher = `
+    MATCH (mp:Mp)-[]-(d:Division)
+    WHERE (mp.partyName ${partyOperator} $partyName OR $partyName = "Any")
+    AND (toLower(d.Category) = toLower($category) OR $category = "Any")
+    AND d.Date > datetime($fromDate) 
+    AND d.Date < datetime($toDate) 
+    AND ${nameMatchCondition}            
+    WITH mp, COUNT(*) AS voteCount
+    ORDER BY voteCount ${orderBy}
+    RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
+    LIMIT toInteger($limit)`;
 
-    const cypher =
-        `MATCH (mp:Mp)-[]-(d:Division)
-        WHERE (mp.partyName ${partyOperator} "${partyName}" OR "${partyName}" ${partyOperator} "Any")
-        AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")
-        AND d.Date > datetime(${fromDateValue}) 
-        AND d.Date < datetime(${toDateValue}) 
-        AND (mp.nameDisplayAs =~ '(?i).*${name}.*' OR "${name}" = "Any")
-        WITH mp, COUNT(*) AS voteCount
-        ORDER BY voteCount ${orderBy}
-        RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
-        LIMIT ${limit}`;
+
+    const params = {
+        partyName,
+        category,
+        fromDate,
+        toDate,
+        name,
+        limit
+    };
 
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
     try {
-        const result = await runCypher(cypher, session);
+        const result = await runCypherWithParams(cypher, session, params); // Assuming you have a runCypherWithParams function
         return result;
     } finally {
         session.close();
     }
 }
 
-export const mostOrLeastVotedDivision = async (ayeOrNo: string, category: string, limit: number = 40, orderBy: string = "DESCENDING", fromDate: string = constants.EARLIEST_FROM_DATE, toDate: string, name = "Any") => {
+export const mostOrLeastVotedDivision = async (
+    ayeOrNo: string,
+    category: string,
+    limit: number = 40,
+    orderBy: string = "DESCENDING",
+    fromDate: string = constants.EARLIEST_FROM_DATE,
+    toDate?: string,
+    name = "Any",
+    matchType = "partial"
+) => {
 
     let cypher;
+      
+    // Set toDate to today if not provided
+    toDate = toDate || new Date().toISOString().substring(0, 10);
 
-    //set to date to today if not provided 
-    if (!toDate) {
-        toDate = new Date().toISOString().substring(0, 10);
+    const params = {
+        ayeOrNoBool: ayeOrNo === "aye",
+        category,
+        fromDate,
+        toDate,
+        name,
+        limit
+      };
+      
+
+    let titleMatchCondition;
+    if (matchType === "whole") {
+        titleMatchCondition = `
+            (toLower(d.Title) CONTAINS ( toLower(' ${name} '))
+            OR toLower(d.Title) STARTS WITH toLower('${name} ')
+            OR toLower(d.Title) ENDS WITH toLower(' ${name}')
+            OR $name = "Any")`;
+    } else {
+        titleMatchCondition = `(toLower(d.Title) CONTAINS toLower($name) OR $name = "Any")`;
     }
-
-    const fromDateValue = objectToStringWithoutQuotes({ year: Number(fromDate.split("-")[0]), month: Number(fromDate.split("-")[1]), day: Number(fromDate.split("-")[2]) });
-    const toDateValue = objectToStringWithoutQuotes({ year: Number(toDate.split("-")[0]), month: Number(toDate.split("-")[1]), day: Number(toDate.split("-")[2]) });
 
     if (ayeOrNo) {
-
-        let ayeOrNoBool = ayeOrNo === "aye" ? true : false;
-
-        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
-            WHERE r.votedAye = ${ayeOrNoBool}
-            AND d.Date > datetime(${fromDateValue}) 
-            AND d.Date < datetime(${toDateValue}) 
-            AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")            
-            AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH d, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN d.Title, voteCount, d.DivisionId
-            LIMIT ${limit}`;
-
+        cypher = `
+        MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
+        WHERE r.votedAye = $ayeOrNoBool
+        AND d.Date > datetime($fromDate)
+        AND d.Date < datetime($toDate)
+        AND (toLower(d.Category) = toLower($category) OR $category = "Any")
+        AND ${titleMatchCondition} 
+        WITH d, COUNT(*) AS voteCount
+        ORDER BY voteCount ${orderBy}
+        RETURN d.Title, voteCount, d.DivisionId
+        LIMIT toInteger($limit)
+        `;
     } else {
-
-        cypher = `MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)                    
-            WHERE d.Date > datetime(${fromDateValue}) 
-            AND (toLower(d.Category) = toLower("${category}") OR "${category}" = "Any")
-            AND d.Date < datetime(${toDateValue}) 
-            AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
-            WITH d, COUNT(*) AS voteCount
-            ORDER BY voteCount ${orderBy}
-            RETURN d.Title, voteCount, d.DivisionId
-            LIMIT ${limit}`;
-
+        cypher = `
+        MATCH (d:Division)-[r:VOTED_FOR]-(mps:Mp)
+        WHERE d.Date > datetime($fromDate)
+        AND (toLower(d.Category) = toLower($category) OR $category = "Any")
+        AND d.Date < datetime($toDate)
+        AND ${titleMatchCondition} 
+        WITH d, COUNT(*) AS voteCount
+        ORDER BY voteCount ${orderBy}
+        RETURN d.Title, voteCount, d.DivisionId
+        LIMIT toInteger($limit)
+        `;
     }
-
-
+  
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
     driver = setDriver();
     const session = driver.session();
-
+  
     try {
-        const result = await runCypher(cypher, session);
-        return result;
+      const result = await runCypherWithParams(cypher, session, params); 
+      return result;
     } finally {
-        session.close();
+      session.close();
     }
-}
+  };
+
 
 export const cleanUp = () => {
     driver.close();

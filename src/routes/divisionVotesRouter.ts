@@ -27,9 +27,11 @@ divisionVotesRouter.get('/', async (req: Request, res: Response) => {
 
   // @ts-ignore
   const name = req?.query?.name || "Any";
+
+  const matchType = req?.query?.matchtype || "partial";
   
   // @ts-ignore
-  const result = await mostOrLeastVotedDivision(ayeOrNo, category, limit, orderby, fromDate, toDate, name);
+  const result = await mostOrLeastVotedDivision(ayeOrNo, category, limit, orderby, fromDate, toDate, name, matchType);
 
   if (result && result.records) {
     // @ts-ignore
