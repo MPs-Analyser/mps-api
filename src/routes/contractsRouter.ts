@@ -41,6 +41,7 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
   const valueTo = getQueryParam(req.query, 'valueto', 99999999999) as number;
   const groupByContractCount = getQueryParam(req.query, 'groupByContractCount', false) as boolean;  
   const matchType: string = getQueryParam(req.query, 'matchtype', "partial") as string;
+  const isAwaredToKnown: boolean = getQueryParam(req.query, 'isawaredtoknown', false) as boolean;
 
   if (orgName === "Any Organisation") {
     orgName = "Any"
@@ -60,7 +61,8 @@ contractsRouter.get('/', async (req: Request, res: Response) => {
     industry,
     valueFrom,
     valueTo,
-    matchType
+    matchType,
+    isAwaredToKnown
   });
 
   // @ts-ignore

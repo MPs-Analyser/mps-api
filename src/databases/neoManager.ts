@@ -601,6 +601,7 @@ interface QueryContractsParams {
     valueFrom?: number;
     valueTo?: number;
     matchType: string;
+    isAwaredToKnown?: boolean
 }
 
 export const queryContracts = async ({
@@ -615,7 +616,8 @@ export const queryContracts = async ({
     industry = "Any",
     valueFrom = 0,
     valueTo = 9999999999,
-    matchType = "partial"
+    matchType = "partial",
+    isAwaredToKnown = false
 }: QueryContractsParams) => {
 
 
@@ -643,6 +645,14 @@ export const queryContracts = async ({
     } else {
         titleMatchCondition = `(toLower(c.Title) CONTAINS toLower($title) OR $title = "Any")`;
     }
+
+    let returnClaus;
+    if (isAwaredToKnown) {
+        returnClaus = "RETURN c.Title AS contract, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Categories AS Categories"
+    } else {
+        returnClaus = "RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Categories AS Categories"
+    }
+
 
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
@@ -677,7 +687,7 @@ export const queryContracts = async ({
         cypher = `
         ${commonQuery}
         WITH c, org, collect(party.partyName) AS awardedByParties, c.AwardedValue AS value
-        RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Categories AS Categories
+        ${returnClaus}
         ORDER BY value DESC
         LIMIT toInteger($limit)`;
 
