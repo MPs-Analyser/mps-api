@@ -4,7 +4,6 @@ import { VotedFor } from '../models/relationships';
 import neo4j from "neo4j-driver";
 import { cyphers } from "./cyphers";
 import { constants } from "../constants";
-import { P } from 'pino';
 
 const logger = require('../logger');
 
@@ -254,70 +253,6 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
             `;
 
         }
-
-
-    } else if (awardedBy !== "Any Party" && donatedTo === "Any Party") { //CONTRACTS RECIEVED
-
-        logger.info("CONTRACTS RECIEVED NEVER CALLED");
-
-        // let matchCondition;
-
-        // if (matchType === "whole") {
-        //   // Whole word match conditions
-        //   matchCondition = `
-        //     (toLower(org.Name) CONTAINS toLower(' ${name} ') 
-        //      OR toLower(org.Name) STARTS WITH toLower('${name} ')
-        //      OR toLower(org.Name) ENDS WITH toLower(' ${name}') 
-        //      OR '${name}' = "Any")
-        //   `;
-        // } else {
-        //   // Partial word match condition
-        //   matchCondition = `toLower(org.Name) CONTAINS toLower('${name}') OR '${name}' = "Any"`;
-        // }
-
-        // cypher = `
-        //   MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-        //   WHERE ${matchCondition}
-        //   AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
-        //   WITH org, COUNT(c) AS contractCount
-        //   WHERE ${matchCondition} // Apply the same match condition again after aggregation
-        //   RETURN org.Name AS \`Awarded to\`, contractCount
-        //   ORDER BY contractCount DESC
-        //   LIMIT toInteger($limit)
-        // `;
-
-    } else if (awardedBy === "Any Party" && donatedTo !== "Any Party") {
-
-        logger.info("DONATIONS MADE NEVER CALLED");
-        // logger.info("Query org details for donations but not contracts awarded");
-
-        // cypher = `
-        // MATCH (d)-[r:DONATED_TO]-(p:Party)
-        // WHERE (p.partyName = $donatedTo OR $donatedTo = "Any")
-        // AND (toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")
-        // AND d.Name <> ""
-        //   RETURN
-        //   d.Name as name,
-        //   p.partyName AS \`Donated To\`,        
-        //   COUNT(r) AS \`Donated Count\`,
-        //   SUM(r.amount) AS \`Total Value\`
-        //   ORDER BY SUM(r.amount) DESC
-        //   LIMIT toInteger($limit)`;
-
-    } else {
-        //TODO not done this one properly yet 
-        // logger.info("Query org details for donations AND contracts awarded");
-        logger.info("CONTRACTS RECIEVED AND DONATIONS MADE NEVER CALLED");
-
-        // cypher = `MATCH (org:Organisation)-[:DONATED_TO]->(party:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(org)
-        // WHERE (org.Name =~ '(?i).*$name.*' OR $name = "Any")
-        // AND (party.partyName = $donatedTo or $donatedTo = "Any Party")
-        // WITH org, party, collect(c) AS contracts
-        // UNWIND contracts AS c
-        // WITH org, party, c ORDER BY c.AwardedDate DESC
-        // WITH org.Name AS name, party.partyName AS donatedTo, party.partyName AS awardedBy, c.Title AS title, collect(c.AwardedDate) AS awardedDates
-        // RETURN name, donatedTo, awardedBy, title, head(awardedDates) AS date
-        // LIMIT toInteger($limit)`;
     }
 
     try {
@@ -371,9 +306,10 @@ export const queryDonation = async ({
     minContractCount = 0,
     matchType = "partial"
 }) => {
+console.log("step 1 ", minContractCount);
 
     const formattedName = escapeRegexSpecialChars(donarName);
-
+    
     const params = {
         name: formattedName,
         minTotalDonationValue,
@@ -385,7 +321,7 @@ export const queryDonation = async ({
         limit
     }
     let cypher;
-
+    
     if (minContractCount && minTotalDonationValue) { //contracts awarded to org by party they donated to
         logger.debug("q1: contracts awarded to org by party they donated to");
 
@@ -1110,7 +1046,7 @@ export const mostOrLeastVotingMps = async ({
     logger.debug("q:10 query mps");
 
     let nameMatchCondition;
-    if (matchType === "whole") {    
+    if (matchType === "whole") {
         nameMatchCondition = `(    
         toLower(mp.nameDisplayAs) CONTAINS toLower(' ${name} ') 
         OR toLower(mp.nameDisplayAs) STARTS WITH toLower('${name} ') 
@@ -1166,7 +1102,7 @@ export const mostOrLeastVotedDivision = async (
 ) => {
 
     let cypher;
-      
+
     // Set toDate to today if not provided
     toDate = toDate || new Date().toISOString().substring(0, 10);
 
@@ -1177,8 +1113,8 @@ export const mostOrLeastVotedDivision = async (
         toDate,
         name,
         limit
-      };
-      
+    };
+
 
     let titleMatchCondition;
     if (matchType === "whole") {
@@ -1217,18 +1153,18 @@ export const mostOrLeastVotedDivision = async (
         LIMIT toInteger($limit)
         `;
     }
-  
+
     CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
-  
+
     try {
-      const result = await runCypherWithParams(cypher, session, params); 
-      return result;
+        const result = await runCypherWithParams(cypher, session, params);
+        return result;
     } finally {
-      session.close();
+        session.close();
     }
-  };
+};
 
 
 export const cleanUp = () => {

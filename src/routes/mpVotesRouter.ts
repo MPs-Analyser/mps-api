@@ -1,30 +1,23 @@
-//@ts-nocheck
 import express, { Request, Response } from 'express';
 import { mostOrLeastVotingMps } from "../databases/neoManager";
+import { getQueryParam } from "../utils/restUtils"; 
+import { constants } from "../constants";
 
 const mpVotesRouter = express.Router();
 
 mpVotesRouter.get('/', async (req: Request, res: Response) => {
 
   console.log('Get MP insights ', req.query);
-  
-  const limit = parseInt(req?.query?.limit || "100");
-  
-  const orderby = req?.query?.orderby || "DESC";
 
-  const partyIncludes = req?.query?.partyIncludes;
-
-  const partyExcludes = req?.query?.partyExcludes;
-  
-  const category = req?.query?.category || "Any";
-  
-  const fromDate = req?.query?.fromDate;
-
-  const toDate = req?.query?.toDate;
-
-  const name = req?.query?.name || "Any";
-
-  const matchType = req?.query?.matchtype || "partial";
+  const limit = getQueryParam(req.query, 'limit', 100);
+  const orderby = getQueryParam(req.query, 'orderby', "DESCENDING");
+  const partyIncludes = getQueryParam(req.query, 'partyIncludes', "");
+  const partyExcludes = getQueryParam(req.query, 'partyExcludes', "");
+  const category = getQueryParam(req.query, 'category', "Any");
+  const fromDate = getQueryParam(req.query, 'fromDate', constants.EARLIEST_FROM_DATE);
+  const toDate = getQueryParam(req.query, 'toDate', new Date().toISOString().substring(0, 10));
+  const name = getQueryParam(req.query, 'name', "Any");
+  const matchType = getQueryParam(req.query, 'matchtype', "partial");
 
   const partyToQuery = partyIncludes || partyExcludes || "Any";
 
@@ -33,21 +26,19 @@ mpVotesRouter.get('/', async (req: Request, res: Response) => {
     partyOperator = "<>"
   }
 
-
   const result = await mostOrLeastVotingMps({
-    partyName: partyToQuery,
-    category,
-    partyOperator, 
-    limit,
-    orderBy: orderby, // Assuming 'orderby' is the variable you intended to use
-    fromDate,
-    toDate,
-    name,
-    matchType 
-});
+    partyName: partyToQuery as string, 
+    category: category as string,      
+    partyOperator,
+    limit: limit as number,            
+    orderBy: orderby as string,        
+    fromDate: fromDate as string | undefined,
+    toDate: toDate as string | undefined,
+    name: name as string,
+    matchType: matchType as string
+  });
 
-  if (result && result.records) {
-    // @ts-ignore
+  if (result && result.records) {    
     res.json(result.records);
   } else {
     res.json({})
