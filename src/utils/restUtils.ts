@@ -12,10 +12,11 @@ export const getQueryParam = (
     return defaultValue;
   }
 
-  let returnValue: any = value;
+  let returnValue: any = value;  
 
   const parsedValue = Number(value);
-  if (!isNaN(parsedValue)) {
+  //some organisation names are numbers but we want to treat them as strings
+  if (!paramName.toLowerCase().includes("name") && !isNaN(parsedValue)) {    
     returnValue = parsedValue; // Return the parsed number if valid
   } else {
     if (typeof value === 'string') {
