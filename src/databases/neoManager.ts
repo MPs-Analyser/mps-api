@@ -76,8 +76,7 @@ export const searchMps = async ({ party = "Any", name = "Any", sex = "Any", year
       WITH s, 
            COUNT(d) as totalVotes,
            COUNT(CASE WHEN r.votedAye THEN d END) as ayeVotes,
-           COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes
-      // Filter based on votes if specified
+           COUNT(CASE WHEN NOT r.votedAye THEN d END) as nayVotes      
       WHERE (totalVotes ${votes} OR "${votes}" = ">0") 
       RETURN 
         s.nameDisplayAs,
@@ -589,7 +588,6 @@ export const queryContracts = async ({
         returnClaus = "RETURN c.Title AS contract, org.Name AS \`Awarded to\`, awardedByParties AS \`Awarded by\`, c.AwardedValue AS value, c.Categories AS Categories"
     }
 
-
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
     WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
@@ -897,8 +895,7 @@ export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_
     AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
     RETURN d.DivisionId, d.Title, d.Date`;
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
-    // CONNECTION_STRING = `neo4j+s://bb90f2dc.databases.neo4j.io`;
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
     driver = setDriver();
     const session = driver.session();
 
@@ -931,7 +928,6 @@ export const votingSimilarity = async (id: number, partyName: string, limit: num
     try {
 
         const neoIdResult = await runCypher(neoIdCypher, session);
-        logger.info("check me out >>> " + JSON.stringify(neoIdResult.records));
 
         if (!neoIdResult.records.length) {
             result = []
@@ -1068,7 +1064,6 @@ export const mostOrLeastVotingMps = async ({
     RETURN mp.nameDisplayAs AS name, mp.partyName AS party, voteCount, mp.id
     LIMIT toInteger($limit)`;
 
-
     const params = {
         partyName,
         category,
@@ -1114,7 +1109,6 @@ export const mostOrLeastVotedDivision = async (
         name,
         limit
     };
-
 
     let titleMatchCondition;
     if (matchType === "whole") {
@@ -1197,15 +1191,12 @@ export const createMpNode = async (mp: Mp) => {
 
     try {
         const session = driver.session();
-        const result = await session.run(cypher);
-        // logger.debug('created ', result);
-
+        const result = await session.run(cypher);        
     } catch (error: any) {
         if (error.code !== "Neo.ClientError.Schema.ConstraintValidationFailed") {
             logger.debug('Error adding Club: ', error);
         }
     }
-
 }
 
 export const createDivisionNode = async (division: Division) => {
@@ -1240,14 +1231,11 @@ export const createVotedForDivision = async (votedFor: VotedFor) => {
     const cypher: string = `MATCH (mp:Mp {id: ${votedFor.mpId}}), (division:Division {DivisionId: ${votedFor.divisionId}}) CREATE (mp)-[:VOTED_FOR {votedAye: ${votedFor.votedAye}, votedAyeNumeric: ${Number(votedFor.votedAye)} }]->(division);`;
 
     try {
-        const session = driver.session();
-        // logger.debug(cypher);            
+        const session = driver.session();        
         const result = await session.run(cypher);
-
     } catch (error: any) {
         if (error.code !== "Neo.ClientError.Schema.ConstraintValidationFailed") {
             logger.debug('Error adding Club: ', error);
         }
     }
-
 }
