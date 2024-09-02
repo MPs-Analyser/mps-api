@@ -1,7 +1,5 @@
-import { log } from 'console';
-import express, { Express, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 
-const app: Express = express();
 const indexRouter = express.Router();
 
 indexRouter.get('/', (req: Request, res: Response) => {

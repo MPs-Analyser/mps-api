@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import { votingSimilarity, votingSimilarityFiltered } from "../databases/neoManager";
 import { constants } from "../constants";
+import { getQueryParam } from "../utils/restUtils"
+
 
 const mostSimilarVotingRecordRouter = express.Router();
 
@@ -8,28 +10,14 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
 
   console.log('Checking node similariy ', req.query);
 
-  // @ts-ignore
-  const limit: string = req?.query?.limit;
-
-  // @ts-ignore
-  const orderby: string = req?.query?.orderby;
-
-  // @ts-ignore
-  const name: string = req?.query?.name;
-
-  // @ts-ignore
-  const partyIncludes = req?.query?.partyIncludes;
-
-  // @ts-ignore
-  const partyExcludes = req?.query?.partyExcludes;
-
-  const id: number = Number(req?.query?.id);
-
-  // @ts-ignore
-  const fromDate: string = req?.query?.fromDate;
-
-  // @ts-ignore
-  const toDate: string = req?.query?.toDate;
+  const limit = parseInt(getQueryParam(req.query, 'limit', 100) as string);
+  const orderby = getQueryParam(req.query, 'orderby', "DESCENDING") as string;
+  const name = getQueryParam(req.query, 'name', "") as string | undefined;
+  const partyIncludes = getQueryParam(req.query, 'partyIncludes', "") as string | undefined;
+  const partyExcludes = getQueryParam(req.query, 'partyExcludes', "") as string | undefined;
+  const id = getQueryParam(req.query, 'id', 0) as number | undefined;
+  const fromDate = getQueryParam(req.query, 'fromDate', "") as string | undefined;
+  const toDate = getQueryParam(req.query, 'toDate', "") as string | undefined;
 
   const today = new Date();
   const formattedToday = today.toISOString().split('T')[0];
@@ -39,7 +27,6 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
     //full date range applied so we dont need to create a filtered graph;
     isFilteredgraphRequired = false;
   }
-
 
   let result;
   let type;
