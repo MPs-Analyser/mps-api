@@ -29,6 +29,6 @@ export const getQueryParam = (
       }
     }  
   }  
-  console.log(`val/key/ret ${value}/${paramName}/${returnValue}`);
+  // console.log(`val/key/ret ${value}/${paramName}/${returnValue}`);
   return returnValue;
 }
