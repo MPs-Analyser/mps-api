@@ -3,7 +3,7 @@ import { ParsedQs } from 'qs';
 export const getQueryParam = (
   query: ParsedQs,
   paramName: string,
-  defaultValue: string | number | boolean
+  defaultValue: string | number | boolean | undefined
 ): string | number | boolean | undefined => {
 
   const value = query[paramName];

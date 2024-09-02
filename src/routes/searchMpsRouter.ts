@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { searchMps } from "../databases/neoManager";
-import { log } from 'console';
+import { getQueryParam } from "../utils/restUtils";
 
 const searchMpsRouter = express.Router();
 
@@ -8,33 +8,22 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
 
   console.log('Search MPs ', req.query);
 
-  // @ts-ignore
-  const party: string = req?.query?.party || 'Any';
+  const party = getQueryParam(req.query, 'party', 'Any') as string;
+  const sex = getQueryParam(req.query, 'sex', 'Any') as string;
+  const name = getQueryParam(req.query, 'name', 'Any') as string;
+  const year = getQueryParam(req.query, 'year', 0) as number;
+  const votes = getQueryParam(req.query, 'votes', ">0") as string;
+  const status = getQueryParam(req.query, 'status', "All") as string;
 
-  // @ts-ignore
-  const sex: string = req?.query?.sex || 'Any';
-
-  // @ts-ignore
-  const name: string = req?.query?.name || 'Any';
-  
-  const year = req?.query?.year || 0;
-
-  const votes = req?.query?.votes || ">0";
-
-  const status = req?.query?.status || "All";
-
-  // @ts-ignore
   const result = await searchMps({ party, name, sex, year, votes, status });
 
-  // @ts-ignore
-  const formattedResult = []
+  const formattedResult:Array<any> = []
 
   if (result && result.records && Array.isArray(result.records)) {
 
     // @ts-ignore
     result.records.forEach(i => {
       
-      // @ts-ignore          
       formattedResult.push(
         {
           name: i._fields[0],
@@ -50,10 +39,8 @@ searchMpsRouter.get('/', async (req: Request, res: Response) => {
       )
     })
   }
-
-  // @ts-ignore
+  
   res.json(formattedResult)
-
 
 });
 
