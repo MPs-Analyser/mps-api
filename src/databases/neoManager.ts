@@ -1239,3 +1239,20 @@ export const createVotedForDivision = async (votedFor: VotedFor) => {
         }
     }
 }
+
+export const getMetaData = async () => {
+
+    const cypher = "MATCH (m:Metadata) RETURN m";
+
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
+    driver = setDriver();
+    const session = driver.session();
+
+    try {
+        const result = await runCypher(cypher, session);
+        return result;
+    } finally {
+        session.close();
+    }
+    
+}

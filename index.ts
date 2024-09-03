@@ -23,6 +23,7 @@ import voteCountsRouter from './src/routes/voteCountsRouter';
 import donationsRouter from "./src/routes/donationsRouter";
 import contractsRouter from "./src/routes/contractsRouter";
 import orgsRouter from "./src/routes/orgsRouter";
+import metaDataRouter from "./src/routes/metaDataRouter";
 
 const logger = require('./src/logger');
 
@@ -54,6 +55,7 @@ app.use("/insights/mpvotes", mpVotesRouter);
 app.use("/insights/divisionvotes", divisionVotesRouter);  
 
 app.use("/contracts", contractsRouter);  
+app.use("/metadata", metaDataRouter);  
 
 app.listen(port, () => {  
   logger.info(`Server is running at http://localhost:${port}`);  
