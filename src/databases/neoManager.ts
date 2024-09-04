@@ -429,6 +429,8 @@ console.log("step 1 ", minContractCount);
 
     try {
         const result = await runCypherWithParams(cypher, session, params);
+        console.log(result.records[0]);
+        
         return result;
     } finally {
         session.close();
@@ -590,7 +592,7 @@ export const queryContracts = async ({
 
     const commonQuery = `
     MATCH (party:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(org)
-    WHERE (toLower(org.Name) CONTAINS toLower($orgName) OR $orgName = "Any")
+    WHERE (toLower(org.Name) = toLower($orgName) OR $orgName = "Any")
     AND (ANY(category IN c.Categories WHERE toLower(category) CONTAINS toLower($industry)) OR $industry = "Any")   
     AND (party.partyName = $awardedBy OR $awardedBy = "Any Party")
     AND org.Name <> ""
