@@ -428,9 +428,7 @@ console.log("step 1 ", minContractCount);
     const session = driver.session();
 
     try {
-        const result = await runCypherWithParams(cypher, session, params);
-        console.log(result.records[0]);
-        
+        const result = await runCypherWithParams(cypher, session, params);        
         return result;
     } finally {
         session.close();

@@ -21,11 +21,7 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   const orgType = getQueryParam(req.query, 'orgtype', "Any") as string;
 
   let result;
-
-  console.log("check 1 ",minTotalDonationValue, minContractCount);
-  console.log("check 2 ", donatedTo, awardedBy);
   
-
   if (minTotalDonationValue || minContractCount || donatedTo !== "Any Party" || awardedBy !== "Any Party") {
     result = await queryDonation({
       donarName: name,
@@ -58,12 +54,9 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
 
 orgsRouter.get('/similar', async (req: Request, res: Response) => {
 
-  console.log("step 1");
-
   const name = getQueryParam(req.query, 'name', "") as string | undefined;
   const similarityType = getQueryParam(req.query, 'type', "leven") as string | undefined;
-
-  console.log('Find similar names to ', name);
+  
   if (name) {
     const shortName = standardizeCompanyName(name);
     const lowerName = name.toLowerCase();
