@@ -326,7 +326,7 @@ console.log("step 1 ", minContractCount);
 
         let matchCondition;
 
-        if (matchType === "whole") {
+        if (matchType === "whole" && donarName !== "Any") {
             // Whole word match conditions
             matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
@@ -336,7 +336,7 @@ console.log("step 1 ", minContractCount);
           `;
         } else {
             // Partial word match condition
-            matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+            matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`;
         }
 
         cypher = `
@@ -357,7 +357,7 @@ console.log("step 1 ", minContractCount);
 
         let matchCondition;
 
-        if (matchType === "whole") {
+        if (matchType === "whole" && donarName !== "Any") {
             // Whole word match conditions
             matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
@@ -367,7 +367,7 @@ console.log("step 1 ", minContractCount);
           `;
         } else {
             // Partial word match condition
-            matchCondition = `toLower(d.Name) CONTAINS toLower($name) OR $name = "Any"`;
+            matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`;
         }
 
         cypher = `
@@ -388,7 +388,7 @@ console.log("step 1 ", minContractCount);
 
         let matchCondition;
 
-        if (matchType === "whole") {
+        if (matchType === "whole" && donarName !== "Any") {
             // Whole word match conditions
             matchCondition = `
             (toLower(d.Name) CONTAINS toLower(' ${formattedName} ') 
@@ -397,7 +397,7 @@ console.log("step 1 ", minContractCount);
           `;
         } else {
             // Partial word match condition
-            matchCondition = `toLower(d.Name) CONTAINS toLower($name)`;
+            matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`; 
         }
 
         cypher = `
