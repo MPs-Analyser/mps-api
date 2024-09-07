@@ -303,7 +303,8 @@ export const queryDonation = async ({
     donatedTo = "Any Party",
     awardedBy = "Any Party",
     minContractCount = 0,
-    matchType = "partial"
+    matchType = "partial",
+    orgType = "Any"
 }) => {
     console.log("step 1 ", minContractCount);
 
@@ -319,6 +320,7 @@ export const queryDonation = async ({
         minContractCount,
         limit
     }
+
     let cypher;
 
     if (minContractCount && minTotalDonationValue) { //contracts awarded to org by party they donated to
@@ -354,7 +356,7 @@ export const queryDonation = async ({
     } else if (minContractCount && !minTotalDonationValue) { //min contracts recieved by org but not interested in 
 
         logger.debug("q2: min contracts recieved by org but not interested in ");
-
+        
         let matchCondition;
 
         if (matchType === "whole" && donarName !== "Any") {
@@ -400,8 +402,14 @@ export const queryDonation = async ({
             matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`;
         }
 
+        let match = "MATCH (d)-[r:DONATED_TO]->(p:Party)"
+
+        if (orgType !== "Any") {
+            match = `MATCH (d:${orgType})-[r:DONATED_TO]->(p:Party)`
+        }
+
         cypher = `
-          MATCH (d)-[r:DONATED_TO]->(p:Party)
+          ${match}
           WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
           WITH d,
           COLLECT(DISTINCT p.partyName) AS uniquePartyNames,

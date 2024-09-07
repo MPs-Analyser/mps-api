@@ -32,7 +32,8 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
       donatedTo,
       awardedBy,
       minContractCount,      
-      matchType
+      matchType,
+      orgType
     });
   } else {
     result = await queryOrgsAndIndividuals({
