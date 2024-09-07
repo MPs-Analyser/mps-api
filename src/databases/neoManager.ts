@@ -114,9 +114,10 @@ export const getParties = async () => {
     }
 }
 
-function escapeRegexSpecialChars(text: string) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+function escapeRegexSpecialChars(text: string | number) {   
+    const textString = typeof text === 'number' ? text.toString() : text;
+    return textString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
 export const querySimilarNames = async (shortName: string, name: string) => {
 
