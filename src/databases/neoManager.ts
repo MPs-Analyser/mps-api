@@ -305,10 +305,10 @@ export const queryDonation = async ({
     minContractCount = 0,
     matchType = "partial"
 }) => {
-console.log("step 1 ", minContractCount);
+    console.log("step 1 ", minContractCount);
 
     const formattedName = escapeRegexSpecialChars(donarName);
-    
+
     const params = {
         name: formattedName,
         minTotalDonationValue,
@@ -320,7 +320,7 @@ console.log("step 1 ", minContractCount);
         limit
     }
     let cypher;
-    
+
     if (minContractCount && minTotalDonationValue) { //contracts awarded to org by party they donated to
         logger.debug("q1: contracts awarded to org by party they donated to");
 
@@ -397,7 +397,7 @@ console.log("step 1 ", minContractCount);
           `;
         } else {
             // Partial word match condition
-            matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`; 
+            matchCondition = `(toLower(d.Name) CONTAINS toLower($name) OR $name = "Any")`;
         }
 
         cypher = `
@@ -428,13 +428,14 @@ console.log("step 1 ", minContractCount);
     const session = driver.session();
 
     try {
-        const result = await runCypherWithParams(cypher, session, params);        
+        const result = await runCypherWithParams(cypher, session, params);
         return result;
     } finally {
         session.close();
     }
 
 }
+
 
 export const getDonorDetails = async ({ donarName = "" }) => {
 
@@ -447,25 +448,32 @@ export const getDonorDetails = async ({ donarName = "" }) => {
 
     const formattedName = escapeRegexSpecialChars(donarName);
 
-    const cypher = `MATCH (d)-[r:DONATED_TO]-(p:Party)
-    WHERE d.Name =~ '(?i).*${formattedName}.*'
+    const cypher = `
+    MATCH (d)-[r:DONATED_TO]-(p:Party)
+    WHERE toLower(d.Name) = $name
     RETURN 
-    d.Name as donar, 
-    d.accountingUnitName as accountingUnitName, 
-    d.postcode as postcode,
-    d.donorStatus as donorStatus, 
-    r.amount as amount, 
-    r.donationType as donationType,
-    r.receivedDate as receivedDate, 
-    p.partyName as partyName`;
+      d.Name as donor, 
+      d.accountingUnitName as accountingUnitName, 
+      d.postcode as postcode,
+      d.donorStatus as donorStatus, 
+      r.amount as amount, 
+      r.donationType as donationType,
+      r.receivedDate as receivedDate, 
+      p.partyName as partyName
+  `;
+
+    const params = {
+        name: formattedName
+    };
 
     try {
-        const result = await runCypher(cypher, session);
+        const result = await runCypherWithParams(cypher, session, params);
         return result;
     } finally {
         session.close();
     }
-}
+};
+
 
 export const getMultiPartyDonars = async () => {
 
@@ -895,7 +903,7 @@ export const votedNo = async (id: number, fromDate: string = constants.EARLIEST_
     AND (d.Title =~ '(?i).*${name}.*' OR "${name}" = "Any")
     RETURN d.DivisionId, d.Title, d.Date`;
 
-    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;    
+    CONNECTION_STRING = `bolt://${process.env.NEO_HOST}:7687`;
     driver = setDriver();
     const session = driver.session();
 
@@ -1191,7 +1199,7 @@ export const createMpNode = async (mp: Mp) => {
 
     try {
         const session = driver.session();
-        const result = await session.run(cypher);        
+        const result = await session.run(cypher);
     } catch (error: any) {
         if (error.code !== "Neo.ClientError.Schema.ConstraintValidationFailed") {
             logger.debug('Error adding Club: ', error);
@@ -1231,7 +1239,7 @@ export const createVotedForDivision = async (votedFor: VotedFor) => {
     const cypher: string = `MATCH (mp:Mp {id: ${votedFor.mpId}}), (division:Division {DivisionId: ${votedFor.divisionId}}) CREATE (mp)-[:VOTED_FOR {votedAye: ${votedFor.votedAye}, votedAyeNumeric: ${Number(votedFor.votedAye)} }]->(division);`;
 
     try {
-        const session = driver.session();        
+        const session = driver.session();
         const result = await session.run(cypher);
     } catch (error: any) {
         if (error.code !== "Neo.ClientError.Schema.ConstraintValidationFailed") {
@@ -1254,5 +1262,5 @@ export const getMetaData = async () => {
     } finally {
         session.close();
     }
-    
+
 }
