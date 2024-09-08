@@ -349,7 +349,7 @@ export const queryDonation = async ({
           WITH d, p, r, collect(c) AS contracts
           WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
           WHERE contractCount > $minContractCount
-          RETURN name, donatedTo AS \`Donated to\`, totalDonationValue AS \`Donation Value\`, donationCount, awardedBy AS \`Awarded Contract by\`, contractCount AS \`Contracts awarded\`
+          RETURN name, donatedTo AS \`Donated to\`, totalDonationValue AS \`Donation Value\`, donationCount, awardedBy AS \`Awarded by\`, contractCount AS \`Contracts awarded\`
           ORDER BY name
           LIMIT toInteger($limit)
         `;
