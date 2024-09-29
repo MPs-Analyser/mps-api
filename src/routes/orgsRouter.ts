@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { queryOrgsAndIndividuals, queryDonation, querySimilarNames, jaroWinklerSimilarity } from "../databases/neoManager";
 import { standardizeCompanyName } from "../utils/companyUtils";
 import { getQueryParam } from "../utils/restUtils"; // Import the getQueryParam function
+import { constants } from "../constants";
 
 const orgsRouter = express.Router();
 
@@ -19,6 +20,8 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   const minTotalDonationValue = getQueryParam(req.query, 'minTotalDonationValue', 0) as number;
   const minContractCount = getQueryParam(req.query, 'minContractCount', 0) as number;
   const orgType = getQueryParam(req.query, 'orgtype', "Any") as string;
+  const donationFromDate = getQueryParam(req.query, 'donationFromDate', constants.EARLIEST_FROM_DATE) as string;
+  const donationToDate = getQueryParam(req.query, 'donationToDate', new Date().toISOString().substring(0, 10)) as string;
 
   let result;
   
@@ -33,7 +36,9 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
       awardedBy,
       minContractCount,      
       matchType,
-      orgType
+      orgType,
+      donationFromDate,
+      donationToDate
     });
   } else {
     result = await queryOrgsAndIndividuals({
