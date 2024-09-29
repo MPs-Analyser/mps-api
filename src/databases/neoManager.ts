@@ -295,7 +295,7 @@ export const topXdonars = async ({ limit = 10 }) => {
     }
 }
 
-export const queryDonation = async ({
+export const queryDonation = async ({ 
     limit = 10,
     donarName = "Any",
     minNumberOfPartiesDonated = 0,
@@ -305,7 +305,9 @@ export const queryDonation = async ({
     awardedBy = "Any Party",
     minContractCount = 0,
     matchType = "partial",
-    orgType = "Any"
+    orgType = "Any",
+    donationFromDate = constants.EARLIEST_FROM_DATE,
+    donationToDate = new Date().toISOString().substring(0, 10),
 }) => {
     console.log("step 1 ", minContractCount);
 
@@ -319,7 +321,9 @@ export const queryDonation = async ({
         donatedTo,
         awardedBy,
         minContractCount,
-        limit
+        limit,
+        donationFromDate,
+        donationToDate
     }
 
     let cypher;
@@ -345,7 +349,9 @@ export const queryDonation = async ({
         cypher = `
           MATCH (d)-[r:DONATED_TO]->(p:Party)-[:TENDERED]->(c:Contract)-[:AWARDED]->(d)
           WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
-            AND ${matchCondition} 
+          AND r.receivedDate >= datetime($donationFromDate)
+          AND r.receivedDate <= datetime($donationToDate)          
+          AND ${matchCondition} 
           WITH d, p, r, collect(c) AS contracts
           WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
           WHERE contractCount > $minContractCount
@@ -375,9 +381,9 @@ export const queryDonation = async ({
 
         cypher = `
           MATCH (p:Party)-[:TENDERED]->(c:Contract)-[awarded:AWARDED]->(d)
-          WHERE ${matchCondition}
-            AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
-            AND d.Name <> ""
+          WHERE ${matchCondition}          
+          AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
+          AND d.Name <> ""
           WITH d, COUNT(c) AS contractCount, toInteger(SUM(c.AwardedValue)) AS awardedValue
           WHERE contractCount > $minContractCount
           RETURN d.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`, awardedValue AS \`Awarded Value\`
@@ -412,11 +418,13 @@ export const queryDonation = async ({
         cypher = `
           ${match}
           WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
+          AND r.receivedDate >= datetime($donationFromDate)
+          AND r.receivedDate <= datetime($donationToDate)
           WITH d,
           COLLECT(DISTINCT p.partyName) AS uniquePartyNames,
           SUM(r.amount) AS totalDonationValue,
           COUNT(r) AS donationCount
-          WHERE ${matchCondition}
+          WHERE ${matchCondition}          
           AND (totalDonationValue >= $minTotalDonationValue OR $minTotalDonationValue = 0) 
           AND (donationCount >= $minDonationCount OR $minDonationCount = 0)        
           AND (SIZE(uniquePartyNames) >= $minNumberOfPartiesDonated OR $minNumberOfPartiesDonated = 0)     
