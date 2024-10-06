@@ -308,6 +308,8 @@ export const queryDonation = async ({
     orgType = "Any",
     donationFromDate = constants.EARLIEST_FROM_DATE,
     donationToDate = new Date().toISOString().substring(0, 10),
+    contractFromDate = constants.EARLIEST_FROM_DATE,
+    contractToDate= new Date().toISOString().substring(0, 10),
 }) => {
     console.log("step 1 ", minContractCount);
 
@@ -323,7 +325,9 @@ export const queryDonation = async ({
         minContractCount,
         limit,
         donationFromDate,
-        donationToDate
+        donationToDate,
+        contractFromDate,
+        contractToDate
     }
 
     let cypher;
@@ -351,6 +355,8 @@ export const queryDonation = async ({
           WHERE (p.partyName = $donatedTo OR $donatedTo = "Any Party")
           AND r.receivedDate >= datetime($donationFromDate)
           AND r.receivedDate <= datetime($donationToDate)          
+          AND c.AwardedDate >= date($contractFromDate)
+          AND c.AwardedDate <= date($contractToDate)          
           AND ${matchCondition} 
           WITH d, p, r, collect(c) AS contracts
           WITH d.Name AS name, p.partyName AS donatedTo, p.partyName AS awardedBy, size(contracts) AS contractCount, toInteger(SUM(r.amount)) AS totalDonationValue, COUNT(r) AS donationCount 
@@ -362,7 +368,7 @@ export const queryDonation = async ({
 
     } else if (minContractCount && !minTotalDonationValue) { //min contracts recieved by org but not interested in 
 
-        logger.debug("q2: min contracts recieved by org but not interested in ");
+        logger.debug("q22: min contracts recieved by org but not interested in ");
         
         let matchCondition;
 
@@ -384,6 +390,8 @@ export const queryDonation = async ({
           WHERE ${matchCondition}          
           AND (p.partyName = $awardedBy OR $awardedBy = "Any Party")
           AND d.Name <> ""
+          AND c.AwardedDate >= date($contractFromDate)
+          AND c.AwardedDate <= date($contractToDate)          
           WITH d, COUNT(c) AS contractCount, toInteger(SUM(c.AwardedValue)) AS awardedValue
           WHERE contractCount > $minContractCount
           RETURN d.Name AS \`Awarded to\`, contractCount AS \`Awarded count\`, awardedValue AS \`Awarded Value\`

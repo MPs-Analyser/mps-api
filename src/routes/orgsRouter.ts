@@ -22,6 +22,8 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
   const orgType = getQueryParam(req.query, 'orgtype', "Any") as string;
   const donationFromDate = getQueryParam(req.query, 'donationFromDate', constants.EARLIEST_FROM_DATE) as string;
   const donationToDate = getQueryParam(req.query, 'donationToDate', new Date().toISOString().substring(0, 10)) as string;
+  const contractFromDate = getQueryParam(req.query, 'contractFromDate', constants.EARLIEST_FROM_DATE) as string;
+  const contractToDate = getQueryParam(req.query, 'contractToDate', new Date().toISOString().substring(0, 10)) as string;
 
   let result;
   
@@ -38,7 +40,9 @@ orgsRouter.get('/', async (req: Request, res: Response) => {
       matchType,
       orgType,
       donationFromDate,
-      donationToDate
+      donationToDate,
+      contractFromDate,
+      contractToDate
     });
   } else {
     result = await queryOrgsAndIndividuals({
