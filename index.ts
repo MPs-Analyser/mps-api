@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 
@@ -57,6 +57,21 @@ app.use("/insights/divisionvotes", divisionVotesRouter);
 app.use("/contracts", contractsRouter);  
 app.use("/metadata", metaDataRouter);  
 
-app.listen(port, () => {  
-  logger.info(`Server is running at http://localhost:${port}`);  
-});
+/**
+ * Lambda specific enrtypoint
+ */
+export const handler = async (event: any, context: any) => {
+  
+  // Create a serverless function to wrap the Express app
+  const serverless = require('serverless-http');
+  const serverlessApp = serverless(app);
+
+  // Return the response from the serverless function
+  return await serverlessApp(event, context);
+};
+
+
+//TODO add this back in if not running in lambda
+// app.listen(port, () => {  
+//   logger.info(`Server is running at http://localhost:${port}`);  
+// });
