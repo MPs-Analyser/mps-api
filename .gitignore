@@ -8,3 +8,4 @@ error.log
 .env LOCAL
 .gitignore
 userdata.sh
+.zip
