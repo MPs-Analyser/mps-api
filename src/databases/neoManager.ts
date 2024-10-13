@@ -128,9 +128,9 @@ export const querySimilarNames = async (shortName: string, name: string) => {
     driver = setDriver();
     const session = driver.session();
 
-    let params = { shortName, name }
+    const params = { shortName, name }
 
-    let cypher = `MATCH (c)
+    const cypher = `MATCH (c)
     WHERE (c.Name CONTAINS $shortName
     OR ANY(label IN labels(c) WHERE label IN ['Organisation', 'Individual'] AND apoc.text.levenshteinDistance(c.Name, $name) < 5))
     AND c.Name <> $name
@@ -158,9 +158,9 @@ export const jaroWinklerSimilarity = async (shortName: string, name: string) => 
     driver = setDriver();
     const session = driver.session();
 
-    let params = { shortName, name }
+    const params = { shortName, name }
 
-    let cypher = `
+    const cypher = `
     MATCH (c:Organisation)
     WHERE c.Name CONTAINS $shortName
     OR apoc.text.jaroWinklerDistance(c.Name, $name) < 0.15 
@@ -188,7 +188,7 @@ export const queryOrgsAndIndividuals = async ({ name = "Any", awardedBy = "Any P
     const session = driver.session();
 
     let cypher = "";
-    let params = {
+    const params = {
         name: escapeRegexSpecialChars(name),
         awardedBy: escapeRegexSpecialChars(awardedBy),
         donatedTo: escapeRegexSpecialChars(donatedTo),

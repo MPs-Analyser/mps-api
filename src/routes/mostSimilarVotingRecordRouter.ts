@@ -11,8 +11,7 @@ mostSimilarVotingRecordRouter.get('/', async (req: Request, res: Response) => {
   console.log('Checking node similariy ', req.query);
 
   const limit = parseInt(getQueryParam(req.query, 'limit', 100) as string);
-  const orderby = getQueryParam(req.query, 'orderby', "DESCENDING") as string;
-  const name = getQueryParam(req.query, 'name', "") as string | undefined;
+  const orderby = getQueryParam(req.query, 'orderby', "DESCENDING") as string;  
   const partyIncludes = getQueryParam(req.query, 'partyIncludes', "") as string | undefined;
   const partyExcludes = getQueryParam(req.query, 'partyExcludes', "") as string | undefined;
   const id = getQueryParam(req.query, 'id', 0) as number | undefined;
